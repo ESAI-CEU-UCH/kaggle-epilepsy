@@ -24,10 +24,6 @@
 # IN THE SOFTWARE.
 
 . scripts/configure.sh
-echo $?
-if [[ $? -ne 0 ]]; then
-    echo "NO"
-fi
 
 if [[ ! -e $SEQUENCES_PATH ]]; then
     $APRIL_EXEC scripts/PREPROCESS/generate_sequences.lua

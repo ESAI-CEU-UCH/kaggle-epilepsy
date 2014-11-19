@@ -25,12 +25,19 @@
 
 . scripts/env.sh
 
+# check competition data is in the proper path
+if [[ ! -e DATA/Dog_1 || ! -e DATA/Dog_2 || ! -e DATA/Dog_3 || ! -e DATA/Dog_4 || ! -e DATA/Dog_5 || ! -e DATA/Patient_1 || ! -e DATA/Patient_2 ]]; then
+    echo "ERROR: Please, download and uncompress all competition data into $ROOT_PATH/DATA"
+    echo "       or just make a symbolic link to directory where data is stored"
+    exit 10
+fi
+
 VERSION=0.4.0
 APRILANN=april-ann-$VERSION
 
 cleanup()
 {
-    echo "cleaning up, please wait until finish"
+    echo "CLEANING UP, PLEASE WAIT UNTIL FINISH"
     cd $ROOT_PATH
     rm -Rf $TMP_PATH/$APRILANN
     md5sum --quiet -c $ROOT_PATH/scripts/v0.4.0.md5
@@ -58,7 +65,7 @@ if [[ -z $APRIL_EXEC || $APRIL_EXEC = "" || ! -e $APRIL_EXEC ]]; then
         cd $TMP_PATH
         # check if source code has been downloaded
         if [[ ! -e v0.4.0.tar.gz ]]; then
-            echo "Downloading APRIL-ANN"
+            echo "Downloading APRIL-ANN tarball"
             wget https://github.com/pakozm/april-ann/archive/v0.4.0.tar.gz
             md5sum --quiet -c $ROOT_PATH/scripts/v0.4.0.md5
             err=$?
@@ -68,31 +75,34 @@ if [[ -z $APRIL_EXEC || $APRIL_EXEC = "" || ! -e $APRIL_EXEC ]]; then
                 exit 10
             fi
         fi
-        echo "Compiling APRIL-ANN"
-        if ! tar zxvf v0.4.0.tar.gz; then
+        echo "Unpacking APRIL-ANN tarball"
+        if ! tar zxf v0.4.0.tar.gz; then
             echo "ERROR: Unable to unpack APRIL-ANN tarball"
             cleanup
             exit 10
         fi
+        echo "Instaling dependencies and compiling APRIL-ANN"
         cd $APRILANN
         # compilation process, if any error happens, the whole directory will be
         # removed
-        (
-            echo "You will need to be sudoer for properly install dependencies"
-            ./DEPENDENCIES-INSTALLER.sh &&
-            . configure.sh &&
-            make release-atlas &&
-            make test &&
-            echo "APRIL-ANN installed, compiled and tested correctly :-)"
-        ) ||
-        (
-            echo "Unable to install, compile and test APRIL-ANN :'("
-            exit 10
-        )
-        if [[ $? -ne 0 ]]; then
+        echo "You will need to be sudoer for properly install dependencies"
+        if ! ./DEPENDENCIES-INSTALLER.sh; then
+            echo "ERROR: Unable to install dependencies"
             cleanup
             exit 10
         fi
+        . configure.sh
+        if ! make release-atlas; then
+            echo "ERROR: Unable to compile APRIL-ANN :'("
+            cleanup
+            exit 10
+        fi
+        if ! make test; then
+            echo "ERROR: Unable to test APRIL-ANN :'("
+            cleanup
+            exit 10
+        fi
+        echo "APRIL-ANN installed, compiled and tested correctly :-)"
     fi
     # configure APRIL-ANN to export APRIL_EXEC environment variable
     echo "Configuring APRIL-ANN"
@@ -104,8 +114,8 @@ if [[ -z $APRIL_EXEC || $APRIL_EXEC = "" || ! -e $APRIL_EXEC ]]; then
         exit 10
     fi
 fi
-
 # removes keyboard interrupt trap (control-c)
 trap - SIGINT
 
+echo "APRIL-ANN configured properly :-)"
 cd $ROOT_PATH
