@@ -22,13 +22,13 @@
   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
   IN THE SOFTWARE.
 ]]
+local DATA_PATH = assert(arg[1], "Needs 1st argument with source path")
+local OUTPUT_PATH = assert(arg[2], "Needs 2st argument with destination path")
+local SEQUENCES_PATH = assert(arg[3], "Needs 3nd argument with sequences filename")
 
 package.path = package.path .. ";./scripts/?.lua"
 --
 local common = require "common"
-local DATA_PATH = common.DATA_PATH
-local SEQUENCES_PATH = common.SEQUENCES_PATH
-local OUTPUT_PATH = common.TMP_PATH .. "/FFT_60s_30s_BFPLOS"
 
 os.execute("mkdir -p %s"%{OUTPUT_PATH})
 
@@ -37,7 +37,7 @@ local WSIZE     = 60   -- seconds
 local WADVANCE  = 30   -- seconds
 
 -- sequences output file handler
-local seqf = io.open(SEQUENCES_PATH, "a")
+local seqf = io.open(SEQUENCES_PATH, "w")
 for _,conf in ipairs({
     { HZ=400, MASK="/Dog_*/*.mat", }, -- Dogs
     { HZ=5000, MASK="/Patient_*/*.mat", }, -- Patients

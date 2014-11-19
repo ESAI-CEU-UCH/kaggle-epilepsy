@@ -25,9 +25,30 @@
 
 . scripts/configure.sh
 
-# Computes FFT, and checks every output file, avoiding to recompute it when it
-# exists. Additionally it writes sequence numbers to SEQUENCES_PATH.
-$APRIL_EXEC scripts/PREPROCESS/compute_fft.lua &&
-# sort sequences to avoid replicated values
-sort -u $SEQUENCES_PATH > $SEQUENCES_PATH.sort_uniq &&
-mv -f $SEQUENCES_PATH.sort_uniq $SEQUENCES_PATH
+cleanup()
+{
+    echo "CLEANING UP, PLEASE WAIT UNTIL FINISH"
+    cd $ROOT_PATH
+    for dest in "$@"; do
+        rm -Rf $dest
+    done
+}
+
+# Avoid FFT computation if not needed
+if [[ ! -e $FFT_PATH ]]; then
+    # Computes FFT features. Additionally it writes sequence numbers to
+    # SEQUENCES_PATH.
+    if ! $APRIL_EXEC scripts/PREPROCESS/compute_fft.lua $DATA_PATH $FFT_PATH $SEQUENCES_PATH; then
+        echo "ERROR: Unable to compute FFT features"
+        cleanup $FFT_PATH $SEQUENCES_PATH
+        exit 10
+    fi
+fi
+
+# Sanity check for the number of FFT files
+N=$(find $FFT_PATH -name "*segment*csv.gz" | wc -l | awk '{print $1}')
+if [[ $N -ne $NUMBER_FFT_FILES ]]; then
+    echo "ERROR: Incorrect number of FFT files"
+    cleanup $FFT_PATH $SEQUENCES_PATH
+    exit 10
+fi

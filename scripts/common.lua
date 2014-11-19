@@ -335,29 +335,26 @@ end
 -- cross-validation scheme.
 function common.make_prep_function(HZ,FFT_SIZE,WSIZE,WADVANCE,out_dir,filter)
   return function(mat_filename)
-    -- output filename is used to avoid 
-    local out_filename = "/%s.channel_01.csv.gz" %
-      { (mat_filename:basename():gsub("%.mat", "" )) }
-    -- a -1 indicates a not-processed file
-    local seq, m, hz, _ = -1
-    -- check if output existence file
-    if not io.open(out_dir .. out_filename) then
-      print("#",mat_filename)
-      collectgarbage("collect")
-      m,hz,_,seq = common.load_matlab_file(mat_filename)
+    print("#",mat_filename)
+    collectgarbage("collect")
+    local m,hz,N,seq = common.load_matlab_file(mat_filename)
+    -- sanity check
+    assert( math.abs(hz - HZ) < 1 )
+    -- fft_tbl is an array of N FFT matrices with size TxF, where N is the
+    -- number of channels (subject dependent), T is the number temporal slices
+    -- (depends in WSIZE, WADVANCE and the number of columns in m) and F is
+    -- the FFT_SIZE.
+    local fft_tbl = common.compute_fft(m, hz, WSIZE, WADVANCE)
+    assert( #fft_tbl == N, "Incorrect number of channels" )
+    -- for each channel
+    for i=1,#fft_tbl do
+      -- store every channel in an independent file
+      local out_filename = "/%s.channel_%02d.csv.gz" %
+        { (mat_filename:basename():gsub("%.mat", "" )), i, }
       -- sanity check
-      assert( math.abs(hz - HZ) < 1 )
-      local fft_tbl = common.compute_fft(m, hz, WSIZE, WADVANCE)
-      -- for each channel
-      for i=1,#fft_tbl do
-        -- store every channel in an independent file
-        local out_filename = "/%s.channel_%02d.csv.gz" %
-          { (mat_filename:basename():gsub("%.mat", "" )), i, }
-        -- sanity check
-        assert( fft_tbl[i]:dim(2) == FFT_SIZE, fft_tbl[i]:dim(2) )
-        local bf = filter( fft_tbl[i] )
-        bf:toTabFilename(out_dir .. out_filename)
-      end
+      assert( fft_tbl[i]:dim(2) == FFT_SIZE, fft_tbl[i]:dim(2) )
+      local bf = filter( fft_tbl[i] )
+      bf:toTabFilename(out_dir .. out_filename)
     end
     return seq
   end
