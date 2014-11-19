@@ -1,3 +1,0 @@
-export DATA_PATH=DATA/
-export TMP_PATH=TMP/
-export SEQUENCES_PATH=TMP/SEQUENCES.txt

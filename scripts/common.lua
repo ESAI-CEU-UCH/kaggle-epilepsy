@@ -1,9 +1,38 @@
+--[[
+  This file is part of ESAI-CEU-UCH/kaggle-epilepsy (https://github.com/ESAI-CEU-UCH/kaggle-epilepsy)
+  
+  Copyright (c) 2014, ESAI, Universidad CEU Cardenal Herrera,
+  (F. Zamora-Martínez, F. Muñoz-Malmaraz, P. Botella-Rocamora, J. Pardo)
+  
+  Permission is hereby granted, free of charge, to any person obtaining a copy
+  of this software and associated documentation files (the "Software"), to deal
+  in the Software without restriction, including without limitation the rights
+  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+  copies of the Software, and to permit persons to whom the Software is
+  furnished to do so, subject to the following conditions:
+  
+  The above copyright notice and this permission notice shall be included in all
+  copies or substantial portions of the Software.
+  
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+  IN THE SOFTWARE.
+]]
+
 local common = {}
 
-local conf = iterator(io.lines("scripts/conf.txt")):
+local conf = iterator(io.lines("scripts/env.sh")):
 map(function(line)
-      local k,v=line:match("^export ([^%s]+)%s*=%s*([^%s]+)$")
-      return k,v
+      local k=line:match("^export ([^%s]+)%s*=%s*[^%s]+$")
+      local v=april_assert(os.getenv(k), "%s %s %s",
+                           "Unable to load environment variables, please check",
+                           "that scripts/conf.sh has been loaded by using:",
+                           ". scripts/env.sh")
+      return k,os.getenv(k)
 end):table()
 for k,v in pairs(conf) do common[k] = v end
 
@@ -32,7 +61,7 @@ end
 -- load all the sequence numbers taken from original mat files and returns a
 -- data_0,data_1 tables of pairs {filename,sequence_number}
 local function load_sequences(filtered_names)
-  local f = assert( io.open("/home/experimentos/CORPORA/KAGGLE/EPILEPSY_PREDICTION/SEQUENCES.txt") )
+  local f = assert( io.open(SEQUENCES_PATH) )
   local data_0 = {}
   local data_1 = {}
   for line in f:lines() do
@@ -53,7 +82,7 @@ local function compute_cross_validation_partition(subject, data_0, data_1)
   assert(type(subject) == "string")
   assert(type(data_0) == "table" and type(data_1) == "table")
   -- Receives the list with all loaded data filenames and sequences, and returns
-  -- a table of sequences.
+  -- a table which associates sequence number with a list of filenames.
   local function divide_sequences(data) -- up-values: subject
     local prev_seq  = math.huge
     local sequences = {}
@@ -74,8 +103,9 @@ local function compute_cross_validation_partition(subject, data_0, data_1)
   end
   
   -- Computes the distribution of sequences into cross-validation blocks.
-  -- Receives a table of blocks (empty or not), a table of sequences,
-  -- and the desired number of blocks.
+  -- Receives a table of blocks (empty or not), a table of sequences (as above),
+  -- and the desired number of blocks. The result is stored at the given blocks
+  -- reference (a table).
   local function distribute_into_blocks(blocks, sequences, num_blocks)
     assert(type(blocks) == "table" and type(sequences) == "table")
     assert(type(num_blocks) == "number")
@@ -95,8 +125,6 @@ local function compute_cross_validation_partition(subject, data_0, data_1)
   local num_blocks = iterator(table.ivalues(sequences_1)):
   map(function(v) return #v end):
   filter(function(n) return n == 6 end):enumerate():select(1):reduce(math.max,0)
-  -- if num_blocks > 3 then num_blocks = math.floor(num_blocks / 2) end
-  -- num_blocks = math.min(num_blocks, 6)
   
   -- distribute the partition
   local blocks = {}
@@ -123,7 +151,8 @@ end
 -- Given a list of train filenames, a table all_train_data with
 -- input_dataset,output_dataset, and a train_func, a sequential iteration over
 -- all CV partitions will be performed, calling train_func with the
--- tr_data,va_data for each of the partitions.
+-- tr_data,va_data for each of the partitions. The classify_func will be used
+-- to compute predictions of validation after training.
 function common.train_with_crossvalidation(list_names, all_train_data, params,
                                            train_func, classify_func)
   local NROWS = all_train_data.input_dataset:numPatterns()/#list_names
@@ -450,204 +479,166 @@ local function get_label_of(basename)
   end
 end
 
-function common.load_data(list,num_channels)
-  local input_ds
+function common.load_data(list,params)
+  print("# LOADING", list)
+  local no_channels = params.no_channels
+  local num_channels = params.channels
+  local context = params.context
+  local d1 = params.d1
+  local d2 = params.d2
+  local input_mat_tbl = {}
   local labels = {}
   local list_names = {}
   local ncols,nrows
   for path in io.lines(list) do
     table.insert(list_names, path:basename())
+    local input
     local mat_tbl = {}
-    for j=1,num_channels do
-      local filename = "%s.channel_%02d.csv.gz"%{path,j}
+    if no_channels then
+      local filename = "%s.txt"%{path}
       local f = april_assert(io.open(filename), "Unable to open %s", filename)
       local ok,msg = xpcall(function()
           mat_tbl[#mat_tbl + 1] = matrix.read(f,
-                                              { [matrix.options.order] = "col_major",
-                                                [matrix.options.tab]   = true,
+                                              { [matrix.options.tab]   = true,
                                                 [matrix.options.ncols] = ncols,
                                                 [matrix.options.nrows] = nrows, })
-      end,
-      debug.traceback)
+                            end,
+        debug.traceback)
       if not ok then
         print(msg)
         error("Error happened loading %s"%{filename})
       end
       nrows,ncols = table.unpack(mat_tbl[#mat_tbl]:dim())
+      assert(#mat_tbl == 1)
+      input = mat_tbl[#mat_tbl]
+    else
+      for j=1,num_channels do
+        local filename = "%s.channel_%02d.csv.gz"%{path,j}
+        local f = april_assert(io.open(filename), "Unable to open %s", filename)
+        local ok,msg = xpcall(function()
+            mat_tbl[#mat_tbl + 1] = matrix.read(f,
+                                                { [matrix.options.tab]   = true,
+                                                  [matrix.options.ncols] = ncols,
+                                                  [matrix.options.nrows] = nrows, })
+                              end,
+          debug.traceback)
+        if not ok then
+          print(msg)
+          error("Error happened loading %s"%{filename})
+        end
+        nrows,ncols = table.unpack(mat_tbl[#mat_tbl]:dim())
+      end
+      input = matrix.join(2,table.unpack(mat_tbl))
     end
-    local input = matrix.join(2,table.unpack(mat_tbl)):rewrap(nrows,ncols,#mat_tbl)
+    assert(input:dim(1) == nrows)
+    assert(input:dim(2) == ncols * #mat_tbl)
     local label = get_label_of(path)
-    input_ds = input_ds or dataset.token.vector(input:size())
-    input_ds:push_back(input)
-    if label then labels[#labels + 1] = label end
+    table.insert(input_mat_tbl, input)
+    if label then
+      for i=1,nrows do labels[#labels + 1] = label end
+    end
   end
-  if #labels > 0 then assert(#labels == input_ds:numPatterns()) end
+  local input_mat = matrix.join(1, input_mat_tbl)
+  assert(input_mat:dim(1) == #input_mat_tbl * nrows)
+  if #labels > 0 then assert(#labels == input_mat:dim(1)) end
+  local in_ds = dataset.matrix(input_mat)
+  if params.cor then
+    local cors = common.load_data(params.cor,{ list = params.cor,
+                                               no_channels = true })
+    assert(in_ds:numPatterns() == cors.input_dataset:numPatterns())
+    in_ds = dataset.join{ in_ds, cors.input_dataset }
+  end
+  if context then
+    in_ds = dataset.contextualizer(in_ds, context, context)
+  end
+  if d1 or d2 then
+    in_ds = dataset.deriv{ dataset = in_ds,
+                           deriv0  = true,
+                           deriv1  = d1 or false,
+                           deriv2  = d2 or false, }
+  end
   return {
-    input_dataset  = input_ds,
+    input_dataset  = in_ds,
     output_dataset = (#labels > 0 and dataset.matrix(matrix(labels))) or nil,
   },
   list_names
 end
 
-function common.area_under_curve(trainer, data, log_scale, roc_curve, use_dataset, ...)
-  local use_dataset = use_dataset or
-    function(trainer,data)
-      return trainer:use_dataset(data)
-    end
-  local tgt = data.output_dataset:toMatrix()
-  local out_ds = use_dataset(trainer, { input_dataset = data.input_dataset,
-                                        output_dataset = dataset.matrix(matrix(data.input_dataset:numPatterns())) },
-                             ...)
-  local output = out_ds:toMatrix()
-  if log_scale then output:exp() end
-  local roc_curve = roc_curve or metrics.roc()
-  roc_curve:add(output,tgt)
-  --local aux = roc_curve:compute_curve()
-  --local cm = stats.confusion_matrix(2)
-  --cm:addData(output:clone():gt(0.5):scalar_add(1):toTable(),tgt:clone():scalar_add(1):toTable())
-  --aux:toTabFilename("curve.txt")
-  return roc_curve:compute_area(),roc_curve,output,tgt
-end
-
 function common.compute_means_devs(ds)
-  if false then
-    local sums = matrix.col_major(ds:patternSize()):zeros():
-      rewrap(table.unpack(ds:getPattern(1):dim()))
-    local sums2 = sums:clone()
-    for i=1,ds:numPatterns() do
-      local m = ds:getPattern(i)
-      sums:axpy(1.0, m)
-      sums2:axpy(1.0, m:clone():pow(2))
-    end
-    local N = ds:numPatterns()
-    local means = sums/N
-    local devs = ((sums2 - (sums^2 / N))/(N-1)):sqrt()
-    assert((devs:min()) ~= 0)
-    return means,devs
-  else
-    local dim = ds:getPattern(1):dim()
-    local N = table.remove(dim,1)
-    local sz = ds:patternSize()
-    local sums = matrix.col_major(sz/N):zeros():rewrap(table.unpack(dim))
-    local sums2 = sums:clone()
-    for i=1,ds:numPatterns() do
-      local m = ds:getPattern(i) -- :rewrap(N,sz/N)
-      for i=1,N do
-        local row = m:select(1,i)
-        sums:axpy(1.0, row)
-        sums2:axpy(1.0, row:clone():pow(2))
-      end
-    end
-    local M = ds:numPatterns()*N
-    local means_p = sums/M
-    local devs_p = ((sums2 - (sums^2 / M))/(M-1)):sqrt()
-    assert((devs_p:min()) ~= 0)
-    -- means_p:rewrap(means_p:size(),1):clone("row_major"):toTabFilename("means")
-    -- devs_p:rewrap(means_p:size(),1):clone("row_major"):toTabFilename("devs")
-    local means = matrix.col_major(N,table.unpack(dim))
-    local devs = matrix.col_major(N,table.unpack(dim))
-    for i=1,N do
-      means:select(1,i):copy(means_p)
-      devs:select(1,i):copy(devs_p)
-    end
-    return means,devs
-  end
+  return ds:mean_deviation()
 end
 
 function common.apply_std(ds,means,devs)
   print("# Applying standarization")
-  local inv_devs = devs:clone():div(1.0)
-  for i=1,ds:numPatterns() do
-    local m = ds:getPattern(i)
-    m:axpy(-1.0,means)
-    m:cmul(inv_devs)
-    ds:putPattern(i,m)
+  return dataset.sub_and_div_normalization(ds,means,devs)
+end
+
+local comb_options = {
+  max = function(slice,r) slice:max(1,r) end,
+  amean = function(slice,r) slice:sum(1, r) r:scal(1/math.sqrt(slice:size())) end,
+  gmean = function(slice,r) r:set(1,1, 1.0 - gmean( 1.0 - slice )) end,
+  hmean = function(slice,r) r:set(1,1, 1.0 - hmean(1.0 - slice)) end,
+}
+function common.combine_filename_outputs(outputs, nrows, comb_name, target_check)
+  assert(outputs:max() <= 1)
+  assert(outputs:min() >= 0)
+  local dim = outputs:dim()
+  assert((#dim == 2) and (dim[1] % nrows == 0) and (dim[2] == 1))
+  local result = matrix[outputs:get_major_order()](dim[1]/nrows,1)
+  local k=0
+  for i=1,dim[1],nrows do
+    k=k+1
+    local slice = outputs({i, i + nrows - 1}, 1)
+    local r = result(k,1)
+    local comb_func = assert(comb_options[comb_name], "Incorrect combine name")
+    comb_func(slice,r)
+    assert(not target_check or slice:sum() == slice:size() or slice:sum() == 0)
   end
+  return result
 end
 
-function common.mean_channel(ds)
-  local out_ds
-  print("# Computing mean channel")
-  for i=1,ds:numPatterns() do
-    local m = ds:getPattern(i)
-    local s = m:sum(3):rewrap(m:dim(1),m:dim(2))
-    local s2 = m:clone():pow(2):sum(3):rewrap(m:dim(1),m:dim(2))
-    local out_m = matrix.col_major(m:dim(1), m:dim(2), 1)
-    out_m:select(3,1):copy(s):scal(1/m:dim(3))
-    --m:select(3,2):copy( ((s2 - (s^2 / m:dim(3))) / (m:dim(3) - 1)) ):sqrt()
-    out_ds = out_ds or dataset.token.vector(out_m:size())
-    out_ds:push_back(out_m)
-  end
-  return out_ds
-end
-
-local function test_standarization(out, centroids)
-  local a0,a1 = table.unpack(centroids)
-  assert(a0 and a1)
-  local th = 0.5 * (a0 + a1)
-  return out:clone():
-    map(function(x)
-        if x < th then
-          return x/th * 0.5
-        else -- x >= th
-          return 0.5 + (x - th)/(1-th) * 0.5
-        end
-    end)
-end
-
-function common.save_test(output, names, ds, models, log_scale, centroids,
-                          forward, ...)
-  local forward = forward or
-    function(trainer, input)
-      local input = input:rewrap(1,table.unpack(input:dim()))
-      return trainer:get_component():forward(input)
-    end
-  assert(not centroids or #centroids==#models)
+function common.save_test(output, names, ds, params, classify, ...)
+  local nrows = ds:numPatterns()/#names
+  assert(math.floor(nrows) == nrows)
   local f = assert(io.open(output, "a"))
-  for id,pat in ds:patterns() do
-    local result
-    for j=1,#models do
-      local out = forward(models[j], pat, ...):max(1)
-      assert(out:size() == 1)
-      if log_scale then out = out:clone():exp() end
-      if not result then result = matrix.as(out):zeros() end
-      if centroids then
-        out = test_standarization(out, centroids[j])
-      end
-      result:axpy(1/#models, out)
-    end
+  local ds = dataset.token.wrapper(ds)
+  local g = assert(io.open("%svalidation_%s.test.txt"%{params.PREFIX,
+                                                       params.SUBJECT}, "w"))
+  for pat,indices in trainable.dataset_multiple_iterator{ bunch_size = nrows,
+                                                          datasets = { ds }, } do
+    assert(#indices == nrows)
+    local id = (indices[1]-1)/nrows + 1
+    local result = classify(pat:clone("row_major"), ...)
+    if params.log_scale then result = result:clone():exp() end
+    -- remove zero values
+    -- result:cmul(result:clone():gt(1e-20))
+    result = common.combine_filename_outputs(result, nrows, params.combine)
     result:clamp(0,1)
-    --for j,id in ipairs(idxs) do
-    -- Dog_1_test_segment_0001.mat,0
+    assert(result:dim(1) == 1 and result:dim(2) == 1)
     f:write(names[id]:basename())
     f:write(".mat,")
-    --f:write(result:get(j,1))
     f:write(result:get(1,1))
     f:write("\n")
+    --
+    g:write(names[id]:basename())
+    g:write(".mat,")
+    g:write(result:get(1,1))
+    g:write("\n")
+    --
     --end
   end
   f:close()
+  g:close()
 end
 
 -- A into a file the validation prediction and target matrices.
-function common.append(where, output, tgt, sampling_size, rnd)
+function common.append(where, output, tgt)
   assert(output:dim(1) == tgt:dim(1))
   assert(#output:dim() == 2)
   assert(#output:dim() == #tgt:dim())
   if where then
     local m
-    if not sampling_size or sampling_size == 0 then
-      m = matrix.join(2, output, tgt)
-    else
-      print("# RESAMPLING VALIDATION = ", sampling_size)
-      m = matrix(sampling_size, 2)
-      local N = output:dim(1)
-      for i=1,sampling_size do
-        local j = rnd:randInt(1,N)
-        local o,t = output:get(j,1),tgt:get(j,1)
-        m:set(i,1,o):set(i,2,t)
-      end
-    end
+    m = matrix.join(2, output, tgt)
     local f = io.open(where, "a")
     m:write(f, { tab=true })
     f:close()
@@ -670,6 +661,8 @@ function common.loss_stuff(loss)
   end
   if loss == "cross_entropy" then
     log_scale = true
+  else
+    log_scale = false
   end
   return log_scale,smooth,loss_param
 end
@@ -679,7 +672,6 @@ local function compute_pca(ds,by_rows,save_matrix)
   if not by_rows then
     m = matrix.col_major(ds:numPatterns(), ds:patternSize())
     for ipat,pat in ds:patterns() do
-      local pat = pat
       m:select(1,ipat):copy( pat:rewrap(pat:size()) )
     end
   else
@@ -688,7 +680,6 @@ local function compute_pca(ds,by_rows,save_matrix)
     m = matrix.col_major(ds:numPatterns()*dims[1],dims[2]*dims[3])
     local k=0
     for ipat,pat in ds:patterns() do
-      local pat = pat
       for i=1,dims[1] do
         k=k+1
         m:select(1,k):copy( pat:select(1,i):contiguous():
@@ -815,12 +806,6 @@ function common.push_logistic_layer(the_net, params)
   end
 end
 
--- ds must contain matrices of NxFxC where N is time dimension, F filters
--- dimension, C recording channels dimension
-function common.correlation_dataset(ds)
-  
-end
-
 -- stores cross validations blocks into a disk directory
 function common.store_cross_validation_blocks(output_dir)
   os.execute("mkdir -p " .. output_dir)
@@ -836,119 +821,51 @@ function common.store_cross_validation_blocks(output_dir)
   end
 end
 
-------------------
--- EM ALGORITHM --
-------------------
-
-local function windowed_input(m, context, shape)
-  assert(m and context)
-  local M = 2*context + 1
-  local dim = m:dim()
-  assert(#dim==2 or #dim==3 or #dim==4, "Incorrect dim size: %d"%{#dim})
-  if #dim == 3 then
-    local m = m:rewrap(dim[1],dim[2]*dim[3]):clone("row_major")
-    return dataset.matrix(m, { patternSize = { M, m:dim(2) },
-                               offset = { context, 0 },
-                               numSteps = { m:dim(1) - M + 1, 1 }, })
-  elseif #dim == 4 then
-    local ds_tbl = {}
-    for i=1,dim[1] do
-      local m = m:select(1,i):contiguous()
-      table.insert(ds_tbl, windowed_input(m, context))
-    end
-    return dataset.union(ds_tbl)
-  else
-    assert(shape)
-    local ds_tbl = {}
-    for i=1,dim[1] do
-      local m = m:select(1,i):contiguous():rewrap(table.unpack(shape))
-      table.insert(ds_tbl, windowed_input(m, context))
-    end
-    return dataset.union(ds_tbl)
-  end
+function common.print_weights_norm2(trainer, name)
+  local mapf = function(name,w) return "%7.3f"%{trainer:norm2(name)} end
+  return iterator(trainer:iterate_weights(name)):map(mapf):concat(" ", " ")
 end
 
-function common.windowed_dataset(input_ds, output_ds, context, shape)
-  assert(input_ds and context)
-  local M = 2*context + 1
-  local dim = input_ds:getPattern(1):dim()
-  assert(#dim == 3)
-  local result_input_ds  = {}
-  local result_output_ds
-  for ipat,pat in input_ds:patterns() do
-    local ds  = windowed_input(pat, context, shape)
-    table.insert(result_input_ds, ds)
-  end
-  result_input_ds = dataset.union(result_input_ds)
-  result_input_ds = dataset.token.wrapper(result_input_ds)
-  if output_ds then
-    local out_m = matrix(result_input_ds:numPatterns(),1)
-    local k = 1
-    for ipat,pat in output_ds:patterns() do
-      assert(#pat == 1)
-      for i=1,dim[1]-M+1 do out_m:set(k,1,pat[1]) k=k+1 end
-    end
-    result_output_ds = dataset.matrix(out_m)
-    assert(result_output_ds:numPatterns() == result_input_ds:numPatterns())
-  end
-  return result_input_ds,result_output_ds
+function common.expectation(classify, input_ds, output_ds, TH, log_scale, ...)
+  local orig_tgt_m = output_ds:toMatrix()
+  local out_m = classify(input_ds:toMatrix(), ...)
+  if log_scale then out_m:exp() end
+  print("# MAX ACTIVATION = ", (out_m:max()))
+  out_m:copy(out_m:gt(TH):to_float()):cmul(orig_tgt_m)
+  local result_positives = out_m:sum()
+  print("# ORIG POSITIVES =   ", orig_tgt_m:sum())
+  print("# REMOVE SAMPLES =   ", (orig_tgt_m - out_m):sum())
+  print("# RESULT POSITIVES = ", result_positives)
+  return result_positives > 0 and dataset.matrix(out_m) or false
 end
 
-function common.forward_EM(trainer, input, context, shape)
-  assert(trainer and input and context)
-  local in_ds  = windowed_input(input,context,shape)
-  local out_ds = trainer:use_dataset{
-    input_dataset  = in_ds,
-    output_dataset = dataset.matrix(matrix(in_ds:numPatterns(),1))
-  }
-  return out_ds:toMatrix()
-end
-
-function common.use_dataset_EM(trainer, val_data, context)
-  assert(trainer and val_data and context and val_data.input_dataset and val_data.output_dataset)
-  local net = trainer:get_component()
-  for ipat,input in val_data.input_dataset:patterns() do
-    local target = val_data.output_dataset:getPattern(ipat)
-    assert(#target == 1)
-    local target = matrix(1,1,target)
-    local output = common.forward_EM(trainer, input, context)
-    local activation = output:max(1)
-    val_data.output_dataset:putPattern(ipat, { activation:get(1,1) })
-  end
-  return val_data.output_dataset
-end
-
-function common.validate_EM(trainer, val_data, context)
-  assert(trainer and val_data and context)
-  local net = trainer:get_component()
-  local loss = val_data.loss or trainer:get_loss_function()
+function common.validate_EM(classify, val_data, loss, nrows, log_scale, combine, ...)
+  assert(classify and val_data and loss)
+  assert(math.floor(nrows) == nrows)
   loss:reset()
-  for ipat,input in val_data.input_dataset:patterns() do
-    local target = val_data.output_dataset:getPattern(ipat)
-    assert(#target == 1)
-    local target = matrix(1,1,target)
-    local output = common.forward_EM(trainer, input, context)
-    local activation = output:max(1)
-    loss:accum_loss(loss:compute_loss(activation, target))
+  local in_ds = dataset.token.wrapper(val_data.input_dataset)
+  local tgt_ds = val_data.output_dataset
+  for in_pat,tgt_pat,indices in trainable.dataset_multiple_iterator{ bunch_size = nrows,
+                                                                     datasets = { in_ds,
+                                                                                  tgt_ds }, } do
+    assert(#indices == nrows)
+    local id = (indices[1]-1)/nrows + 1
+    local result = classify(in_pat:clone("row_major"), ...)
+    if log_scale then result = result:clone():exp() end
+    -- remove zero values
+    -- result:cmul(result:clone():gt(1e-20))
+    result = common.combine_filename_outputs(result, nrows, combine):clamp(0,1)
+    tgt_pat = common.combine_filename_outputs(tgt_pat:clone("row_major"),
+                                              nrows, "max", true)
+    assert(result:dim(1) == 1 and result:dim(2) == 1)
+    if log_scale then result:log() end
+    local l = table.pack(loss:compute_loss(result:clone("col_major"),
+                                           tgt_pat:clone("col_major")))
+    if l[1] then
+      loss:accum_loss(table.unpack(l))
+    end
   end
   return loss:get_accum_loss()
-end
-
-function common.expectation(trainer, input_ds, output_ds, TH, log_scale)
-  local orig_out_m = output_ds:toMatrix()
-  local output_ds  = trainer:use_dataset{
-    input_dataset  = input_ds,
-    output_dataset = output_ds,
-  }
-  local m = output_ds:toMatrix()
-  if log_scale then m:exp() end
-  print("# MAX ACTIVATION = ", (m:max()))
-  m:copy(m:gt(TH):to_float()):cmul(orig_out_m)
-  local result_positives = m:sum()
-  print("# ORIG POSITIVES =   ", orig_out_m:sum())
-  print("# REMOVE SAMPLES =   ", (orig_out_m - m):sum())
-  print("# RESULT POSITIVES = ", result_positives)
-  return result_positives > 0 and dataset.matrix(m) or false
 end
 
 return common

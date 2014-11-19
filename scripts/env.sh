@@ -1,0 +1,5 @@
+export ROOT_PATH=$(pwd)
+export DATA_PATH=DATA
+export TMP_PATH=TMP
+export SEQUENCES_PATH=$TMP_PATH/SEQUENCES.txt
+mkdir -p $TMP_PATH
