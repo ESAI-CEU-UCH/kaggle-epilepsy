@@ -25,34 +25,29 @@
 
 local common = {}
 
-local conf = iterator(io.lines("scripts/env.sh")):
-map(function(line)
+-- load environment configuration into commont table
+iterator(io.lines("scripts/env.sh")):
+apply(function(line)
       local k=line:match("^export ([^%s]+)%s*=%s*[^%s]+$")
-      local v=april_assert(os.getenv(k), "%s %s %s",
-                           "Unable to load environment variables, please check",
-                           "that scripts/conf.sh has been loaded by using:",
-                           ". scripts/env.sh")
-      return k,os.getenv(k)
-end):table()
-for k,v in pairs(conf) do common[k] = v end
+      if k then
+        local v=april_assert(os.getenv(k), "%s %s %s",
+                             "Unable to load environment variables, please check",
+                             "that scripts/conf.sh has been loaded by using:",
+                             ". scripts/env.sh")
+        common[k] = v
+      end
+end)
 
-local DATA_PATH       = conf.DATA_PATH
-local SEQUENCES_PATH  = conf.SEQUENCES_PATH
-
+-- libraries import
 local mop   = matrix.op
 local amean = stats.amean
 local gmean = stats.gmean
 local hmean = stats.hmean
 
+-- check APRIL-ANN version
 local major,minor,commit = util.version()
-
-if tonumber(commit) >= 2192 then
-  -- avoid warning messages of deprecated functions
-  matrix.col_major = matrix
-  matrix.row_major = matrix
-  class.extend(matrix, "get_major_order", function() return "row_major" end)
-  stats.mean_var = stats.running.mean_var
-end
+assert( tonumber(major) >= 0 and tonumber(minor) >= 4,
+        "Incorrect APRIL-ANN version" )
 
 ------------------------------------------------------------------------------
 ---------------------- CROSS VALIDATION PARTITIONS ---------------------------
@@ -61,7 +56,7 @@ end
 -- load all the sequence numbers taken from original mat files and returns a
 -- data_0,data_1 tables of pairs {filename,sequence_number}
 local function load_sequences(filtered_names)
-  local f = assert( io.open(SEQUENCES_PATH) )
+  local f = assert( io.open(common.SEQUENCES_PATH) )
   local data_0 = {}
   local data_1 = {}
   for line in f:lines() do
@@ -206,7 +201,7 @@ function common.train_with_crossvalidation(list_names, all_train_data, params,
     return tr_data,va_data
   end
   --
-  local mv = stats.mean_var()
+  local mv = stats.running.mean_var()
   local roc_curve = metrics.roc()
   local P = 1
   --
@@ -291,22 +286,29 @@ end
 --------------------------- PREPROCESSING ------------------------------------
 ------------------------------------------------------------------------------
 
+-- receives a matlab matrix filename and returns the EEG matrix, sampling
+-- frequency, number of channles and sequence number
 function common.load_matlab_file(filename)
-  local ok,m,hz,num_channels = xpcall(function()
+  local ok,m,hz,num_channels,seq = xpcall(function()
       local data = assert( matlab.read(filename) )
       local name,tbl = assert( next(data) )
       local hz = assert( tbl.sampling_frequency:get(1,1) )
+      local seq = tbl.sequence:get(1,1)
       local m = assert( tbl.data:to_float() )
-      return m,hz,m:dim(1)
+      return m,hz,m:dim(1),seq
                          end,
     debug.traceback)
   if not ok then
     print(m)
     error("An error happened processing %s"%{filename})
   end
-  return m,hz,num_channels
+  return m, hz, num_channels, seq
 end
 
+-- recieves a matrix with NxM, sampling_frequency, window size in seconds,
+-- window advance in seconds, and returns an array with N matrices of TxF, where
+-- N is the number of channels, M is the number of samples, T is the number of
+-- window slices and F is the size of FFT output.
 function common.compute_fft(m, hz, wsize, wadvance)
   local wsize,wadvance = math.floor(wsize*hz),math.floor(wadvance*hz)
   local fft_tbl = {}
@@ -322,34 +324,48 @@ function common.compute_fft(m, hz, wsize, wadvance)
   return fft_tbl
 end
 
+-- computes logarithm compression of a matrix
 function common.compress(m)
   return m:clone():clamp(1.0, (m:max())):log()
 end
 
+-- returns a closure which can be used in a parallel_for_each in order to
+-- preprocess (FFT computation) a list of matlab filenames. The closure returns
+-- the sequence number of the file, in order to extract out this information for
+-- cross-validation scheme.
 function common.make_prep_function(HZ,FFT_SIZE,WSIZE,WADVANCE,out_dir,filter)
   return function(mat_filename)
-    local out_filename = "%s.channel_%02d.csv.gz" %
-      { (mat_filename:basename():gsub("%.mat", "" )), 1, }
+    -- output filename is used to avoid 
+    local out_filename = "/%s.channel_01.csv.gz" %
+      { (mat_filename:basename():gsub("%.mat", "" )) }
+    -- a -1 indicates a not-processed file
+    local seq, m, hz, _ = -1
+    -- check if output existence file
     if not io.open(out_dir .. out_filename) then
       print("#",mat_filename)
       collectgarbage("collect")
-      local m,hz = common.load_matlab_file(mat_filename)
+      m,hz,_,seq = common.load_matlab_file(mat_filename)
+      -- sanity check
       assert( math.abs(hz - HZ) < 1 )
       local fft_tbl = common.compute_fft(m, hz, WSIZE, WADVANCE)
-      local bf_tbl = {}
+      -- for each channel
       for i=1,#fft_tbl do
-        local out_filename = "%s.channel_%02d.csv.gz" %
+        -- store every channel in an independent file
+        local out_filename = "/%s.channel_%02d.csv.gz" %
           { (mat_filename:basename():gsub("%.mat", "" )), i, }
+        -- sanity check
         assert( fft_tbl[i]:dim(2) == FFT_SIZE, fft_tbl[i]:dim(2) )
-        bf_tbl[i] = filter( fft_tbl[i] )
-        bf_tbl[i]:toTabFilename(out_dir .. out_filename)
+        local bf = filter( fft_tbl[i] )
+        bf:toTabFilename(out_dir .. out_filename)
       end
     end
+    return seq
   end
 end
 
-function common.compute_PLOS_filter(HZ, FFT_SIZE, NUM_BF)
-  assert(NUM_BF == 6)
+-- returns a filter function prepared to transform an input matrix with FFT_SIZE
+-- columns, recorded at HZ sampling rate
+function common.compute_PLOS_filter(HZ, FFT_SIZE)
   local BIN_WIDTH = 0.5*HZ / FFT_SIZE
   -- create a bank filter matrix (sparse matrix)
   local limits = {
@@ -360,108 +376,24 @@ function common.compute_PLOS_filter(HZ, FFT_SIZE, NUM_BF)
     { 30,   70 }, -- low-gamma
     { 70,  180 }, -- high-gamma
   }
+  local NUM_BF = #limits
   local filter = matrix(FFT_SIZE,NUM_BF):zeros()
   for i=1,NUM_BF do
     local ini = math.ceil(limits[i][1] / BIN_WIDTH)
     local fin = math.floor(limits[i][2] / BIN_WIDTH)
     local sz  = fin - ini + 1
+    -- select a column of the filter matrix
     local bf  = filter:select(2,i)
+    -- set the rows from (ini,fin) to 1/sz (arithmetic mean filter)
     bf({ ini , fin }):fill(1/sz)
   end
+  -- convert the filter into a sparse matrix (improve computation time)
   local filter = matrix.sparse.csc(filter)
+  -- returns a closure which receives a matrix, applies the matrix filter,
+  -- log-compress the result and returns it.
   return function(m)
     local out = common.compress( m * filter )
-    assert(out:dim(1) == m:dim(1))
-    assert(out:dim(2) == NUM_BF)
-    return out
-  end
-end
-
-function common.compute_PLOS_0_filter(HZ, FFT_SIZE, NUM_BF)
-  assert(NUM_BF == 7)
-  local BIN_WIDTH = 0.5*HZ / FFT_SIZE
-  -- create a bank filter matrix (sparse matrix)
-  local limits = {
-    {  0.1,  4 }, -- delta
-    {  4,    8 }, -- theta
-    {  8,   12 }, -- alpha
-    { 12,   30 }, -- beta
-    { 30,   70 }, -- low-gamma
-    { 70,  180 }, -- high-gamma
-  }
-  local filter = matrix(FFT_SIZE,NUM_BF):zeros()
-  filter:select(2,1):set(1,1)
-  for i=1,NUM_BF-1 do
-    local ini = math.ceil(limits[i][1] / BIN_WIDTH)
-    local fin = math.floor(limits[i][2] / BIN_WIDTH)
-    local sz  = fin - ini + 1
-    local bf  = filter:select(2,i+1)
-    bf({ ini , fin }):fill(1/sz)
-  end
-  local filter = matrix.sparse.csc(filter)
-  return function(m)
-    local out = common.compress( m * filter )
-    assert(out:dim(1) == m:dim(1))
-    assert(out:dim(2) == NUM_BF)
-    return out
-  end
-end
-
-function common.compute_rectangular_nonoverlap_filter(HZ, FFT_SIZE, NUM_BF)
-  local BF_WIDTH = FFT_SIZE / NUM_BF
-  assert( BF_WIDTH == math.floor(BF_WIDTH) )
-  -- create a bank filter matrix (sparse matrix)
-  local filter = matrix(FFT_SIZE,NUM_BF):zeros()
-  for i=1,NUM_BF do
-    local bf = filter:select(2,i)
-    bf({ BF_WIDTH * (i-1) + 1 , BF_WIDTH * i }):fill(1/BF_WIDTH)
-  end
-  assert( filter:sum(1) == matrix(1,NUM_BF):ones() )
-  local filter = matrix.sparse.csc(filter)
-  assert( filter:non_zero_size() == FFT_SIZE )
-  return function(m)
-    local out = common.compress( m * filter )
-    assert(out:dim(1) == m:dim(1))
-    assert(out:dim(2) == NUM_BF)
-    return out
-  end
-end
-
-function common.compute_log_triangular_overlap_filter(HZ, F_MIN, F_MAX,
-                                                      FFT_SIZE, NUM_BF)
-  --local function freq2log(fHz) return 2595.0 * math.log10( 1 + fHz / 700.0 ) end
-  --local function log2freq(fHz) return 700.0 * ( 10.0^( fHz / 2595.0) -1.0) end
-  local function freq2log(fHz) return 10.0 * math.log10( 1 + fHz / 4.0 ) end
-  local function log2freq(fHz) return 4.0 * ( 10.0^( fHz / 10.0 ) - 1.0 ) end
-  --
-  local log_min = freq2log(F_MIN)
-  local log_max = freq2log(F_MAX)
-  local BIN_WIDTH = 0.5*HZ / FFT_SIZE
-  local LOG_WIDTH = (log_max - log_min) / (NUM_BF + 1)
-  -- create a bank filter matrix (sparse matrix)
-  local filter = matrix(FFT_SIZE,NUM_BF):zeros()
-  local centers = {}
-  for i=1,NUM_BF+2 do centers[i] = log2freq(log_min + (i-1)*LOG_WIDTH) end
-  for i=1,NUM_BF do
-    local bf = filter:select(2,i)
-    -- compute triangle
-    local start  = math.min(math.round(centers[i] / BIN_WIDTH)+1, FFT_SIZE)
-    local center = math.min(math.round(centers[i+1] / BIN_WIDTH)+1, FFT_SIZE)
-    local stop   = math.min(math.round(centers[i+2] / BIN_WIDTH)+1, FFT_SIZE)
-    -- compute bandwidth (number of indices per window)
-    local inc = 1.0/(center - start)
-    local dec = 1.0/(stop - center)
-    -- compute triangle-shaped filter coefficients
-    bf({start,center-1}):linear(0):scal(inc) -- left ramp
-    bf({center,stop-1}):linear(0):scal(dec):complement() -- right ramp
-    -- normalize the sum of coefficients:
-    bf:scal(1/bf:sum())
-    -- check for nan or inf
-    assert(bf:isfinite(), "Fatal error on log filter bank")
-  end
-  local filter = matrix.sparse.csc(filter)
-  return function(m)
-    local out = common.compress( m * filter )
+    -- sanity checks
     assert(out:dim(1) == m:dim(1))
     assert(out:dim(2) == NUM_BF)
     return out
@@ -584,7 +516,7 @@ function common.combine_filename_outputs(outputs, nrows, comb_name, target_check
   assert(outputs:min() >= 0)
   local dim = outputs:dim()
   assert((#dim == 2) and (dim[1] % nrows == 0) and (dim[2] == 1))
-  local result = matrix[outputs:get_major_order()](dim[1]/nrows,1)
+  local result = matrix(dim[1]/nrows,1)
   local k=0
   for i=1,dim[1],nrows do
     k=k+1
@@ -608,7 +540,7 @@ function common.save_test(output, names, ds, params, classify, ...)
                                                           datasets = { ds }, } do
     assert(#indices == nrows)
     local id = (indices[1]-1)/nrows + 1
-    local result = classify(pat:clone("row_major"), ...)
+    local result = classify(pat:clone(), ...)
     if params.log_scale then result = result:clone():exp() end
     -- remove zero values
     -- result:cmul(result:clone():gt(1e-20))
@@ -670,14 +602,14 @@ end
 local function compute_pca(ds,by_rows,save_matrix)
   local m
   if not by_rows then
-    m = matrix.col_major(ds:numPatterns(), ds:patternSize())
+    m = matrix(ds:numPatterns(), ds:patternSize())
     for ipat,pat in ds:patterns() do
       m:select(1,ipat):copy( pat:rewrap(pat:size()) )
     end
   else
     local dims = ds:getPattern(1):dim()
     assert(#dims == 3)
-    m = matrix.col_major(ds:numPatterns()*dims[1],dims[2]*dims[3])
+    m = matrix(ds:numPatterns()*dims[1],dims[2]*dims[3])
     local k=0
     for ipat,pat in ds:patterns() do
       for i=1,dims[1] do
@@ -850,17 +782,17 @@ function common.validate_EM(classify, val_data, loss, nrows, log_scale, combine,
                                                                                   tgt_ds }, } do
     assert(#indices == nrows)
     local id = (indices[1]-1)/nrows + 1
-    local result = classify(in_pat:clone("row_major"), ...)
+    local result = classify(in_pat:clone(), ...)
     if log_scale then result = result:clone():exp() end
     -- remove zero values
     -- result:cmul(result:clone():gt(1e-20))
     result = common.combine_filename_outputs(result, nrows, combine):clamp(0,1)
-    tgt_pat = common.combine_filename_outputs(tgt_pat:clone("row_major"),
+    tgt_pat = common.combine_filename_outputs(tgt_pat:clone(),
                                               nrows, "max", true)
     assert(result:dim(1) == 1 and result:dim(2) == 1)
     if log_scale then result:log() end
-    local l = table.pack(loss:compute_loss(result:clone("col_major"),
-                                           tgt_pat:clone("col_major")))
+    local l = table.pack(loss:compute_loss(result:clone(),
+                                           tgt_pat:clone()))
     if l[1] then
       loss:accum_loss(table.unpack(l))
     end

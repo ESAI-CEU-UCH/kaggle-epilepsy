@@ -25,6 +25,9 @@
 
 . scripts/configure.sh
 
-if [[ ! -e $SEQUENCES_PATH ]]; then
-    $APRIL_EXEC scripts/PREPROCESS/generate_sequences.lua
-fi
+# Computes FFT, and checks every output file, avoiding to recompute it when it
+# exists. Additionally it writes sequence numbers to SEQUENCES_PATH.
+$APRIL_EXEC scripts/PREPROCESS/compute_fft.lua &&
+# sort sequences to avoid replicated values
+sort -u $SEQUENCES_PATH > $SEQUENCES_PATH.sort_uniq &&
+mv -f $SEQUENCES_PATH.sort_uniq $SEQUENCES_PATH
