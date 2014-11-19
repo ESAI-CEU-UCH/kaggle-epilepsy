@@ -57,7 +57,7 @@ for _,conf in ipairs({
                                      tostring)
   -- write sequences into output sequences file
   for i,v in ipairs(sequences) do
-    if v ~= -1 then -- -1 indicates a filename which hasn't be processed
+    if v ~= -1 then -- -1 indicates a test filename (without sequence number)
       fprintf(seqf, "%s %d\n", list[i]:basename():gsub(".mat$",""), v)
       seqf:flush()
     end

@@ -293,9 +293,10 @@ function common.load_matlab_file(filename)
       local data = assert( matlab.read(filename) )
       local name,tbl = assert( next(data) )
       local hz = assert( tbl.sampling_frequency:get(1,1) )
-      local seq = tbl.sequence:get(1,1)
+      local seq = tbl.sequence
+      if seq then seq = seq:get(1,1) end
       local m = assert( tbl.data:to_float() )
-      return m,hz,m:dim(1),seq
+      return m,hz,m:dim(1),seq or -1
                          end,
     debug.traceback)
   if not ok then
