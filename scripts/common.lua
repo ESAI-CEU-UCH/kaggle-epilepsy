@@ -70,12 +70,14 @@ local function load_sequences(filtered_names)
   return data_0,data_1
 end
 
--- compute the cross validation partition for a given subject name (Dog_1,
+-- Computes the cross validation partition for a given subject name (Dog_1,
 -- Dog_2, ...) and the pair data_0,data_1 returned by load_sequences function.
--- It returns blocks, a table of filename arrays.
+-- It returns blocks table, which is an array with as many entries as blocks and
+-- every entry is a list of filenames.
 local function compute_cross_validation_partition(subject, data_0, data_1)
   assert(type(subject) == "string")
   assert(type(data_0) == "table" and type(data_1) == "table")
+
   -- Receives the list with all loaded data filenames and sequences, and returns
   -- a table which associates sequence number with a list of filenames.
   local function divide_sequences(data) -- up-values: subject
@@ -113,15 +115,17 @@ local function compute_cross_validation_partition(subject, data_0, data_1)
       end
     end
   end
-
+  
+  -- rearrangue all 6 files in every sequence together
   local sequences_0 = divide_sequences(data_0)
   local sequences_1 = divide_sequences(data_1)
   
+  -- compute number of blocks as the number of positive sequences with size 6
   local num_blocks = iterator(table.ivalues(sequences_1)):
   map(function(v) return #v end):
-  filter(function(n) return n == 6 end):enumerate():select(1):reduce(math.max,0)
+  filter(function(n) return n == 6 end):size()
   
-  -- distribute the partition
+  -- distribute the partition into blocks
   local blocks = {}
   distribute_into_blocks(blocks, sequences_0, num_blocks)
   distribute_into_blocks(blocks, sequences_1, num_blocks)
@@ -140,6 +144,7 @@ local function compute_cross_validation_partition(subject, data_0, data_1)
   end
   assert(N == count(sequences_0) + count(sequences_1))
   --
+  
   return blocks
 end
 
@@ -150,10 +155,14 @@ end
 -- to compute predictions of validation after training.
 function common.train_with_crossvalidation(list_names, all_train_data, params,
                                            train_func, classify_func)
+  -- compute number of time slices (number of rows)
   local NROWS = all_train_data.input_dataset:numPatterns()/#list_names
   print("# CV INPUT NUM ROWS = ", NROWS)
+  -- sanity check
   assert(math.floor(NROWS) == NROWS)
+  -- dictionary of filename into a numeric position
   local name2id = table.invert(list_names)
+  -- take the subject from 
   local subject = list_names[1]:match("^([a-zA-Z]+_[0-9]+).*$")
   local data_0,data_1 = load_sequences(name2id)
   local blocks = compute_cross_validation_partition(subject, data_0, data_1)
@@ -402,6 +411,8 @@ end
 --------------------------- TRAINING ----------------------------------------
 -----------------------------------------------------------------------------
 
+-- get class label, 0 or 1 depending in the filename, or nil if not
+-- preictal/interictal found in the filename
 local function get_label_of(basename)
   if basename:match("preictal") then return 1
   elseif basename:match("interictal") then return 0
@@ -409,84 +420,101 @@ local function get_label_of(basename)
   end
 end
 
+local function protected_call(func, error_msg, ...)
+  local result = table.pack(xpcall(func(...),
+                                   debug.traceback))
+  local ok = table.remove(result,1)
+  if not ok then
+    print(result[1])
+    error(error_msg)
+  end
+  return table.pack(result)
+end
+
+-- loads a list of filenames to train
 function common.load_data(list,params)
   print("# LOADING", list)
+  -- true if features doesn't are segmented into channels
   local no_channels = params.no_channels
   local num_channels = params.channels
+  -- context size (the time slice window is c+1+c)
   local context = params.context
-  local d1 = params.d1
-  local d2 = params.d2
+  -- a list of input matrices
   local input_mat_tbl = {}
+  -- a list with labels of every matrix row
   local labels = {}
+  -- a list with all filenames
   local list_names = {}
-  local ncols,nrows
+  local ncols,nrows -- for sanity check
+  -- for every filename path in the given list
   for path in io.lines(list) do
     table.insert(list_names, path:basename())
     local input
     local mat_tbl = {}
-    if no_channels then
+    if no_channels then -- load a matrix without channels splitted
       local filename = "%s.txt"%{path}
       local f = april_assert(io.open(filename), "Unable to open %s", filename)
-      local ok,msg = xpcall(function()
+      protected_call(function()
           mat_tbl[#mat_tbl + 1] = matrix.read(f,
                                               { [matrix.options.tab]   = true,
                                                 [matrix.options.ncols] = ncols,
                                                 [matrix.options.nrows] = nrows, })
-                            end,
-        debug.traceback)
-      if not ok then
-        print(msg)
-        error("Error happened loading %s"%{filename})
-      end
+                     end,
+        "Error happened loading %s"%{filename})
+      f:close()
       nrows,ncols = table.unpack(mat_tbl[#mat_tbl]:dim())
       assert(#mat_tbl == 1)
       input = mat_tbl[#mat_tbl]
-    else
+    else -- load a matrix splitted into different channel filenames
       for j=1,num_channels do
         local filename = "%s.channel_%02d.csv.gz"%{path,j}
         local f = april_assert(io.open(filename), "Unable to open %s", filename)
-        local ok,msg = xpcall(function()
+        protected_call(function()
             mat_tbl[#mat_tbl + 1] = matrix.read(f,
                                                 { [matrix.options.tab]   = true,
                                                   [matrix.options.ncols] = ncols,
                                                   [matrix.options.nrows] = nrows, })
-                              end,
-          debug.traceback)
-        if not ok then
-          print(msg)
-          error("Error happened loading %s"%{filename})
-        end
+                       end,
+          "Error happened loading %s"%{filename})
+        f:close()
         nrows,ncols = table.unpack(mat_tbl[#mat_tbl]:dim())
       end
+      -- join by columns all channels
       input = matrix.join(2,table.unpack(mat_tbl))
     end
+    -- sanity check
     assert(input:dim(1) == nrows)
     assert(input:dim(2) == ncols * #mat_tbl)
     local label = get_label_of(path)
+    -- annotate the input matrix
     table.insert(input_mat_tbl, input)
     if label then
+      -- annotate as many labels as rows has the input matrix
       for i=1,nrows do labels[#labels + 1] = label end
     end
-  end
+  end -- for path in list
+  -- join by rows all the loaded matrices
   local input_mat = matrix.join(1, input_mat_tbl)
+  -- sanity checks
   assert(input_mat:dim(1) == #input_mat_tbl * nrows)
   if #labels > 0 then assert(#labels == input_mat:dim(1)) end
+  -- build a dataset with all the input matrix
   local in_ds = dataset.matrix(input_mat)
   if params.cor then
+    -- if correlation features are available, load then recursively
     local cors = common.load_data(params.cor,{ list = params.cor,
                                                no_channels = true })
     assert(in_ds:numPatterns() == cors.input_dataset:numPatterns())
+    -- join both set of features
     in_ds = dataset.join{ in_ds, cors.input_dataset }
   end
   if context then
+    -- BUG: we are building contextualized model which mixes the limits of the
+    -- original files
     in_ds = dataset.contextualizer(in_ds, context, context)
   end
-  if d1 or d2 then
-    in_ds = dataset.deriv{ dataset = in_ds,
-                           deriv0  = true,
-                           deriv1  = d1 or false,
-                           deriv2  = d2 or false, }
-  end
+  -- return a table with input and output datasets, and the list of loaded
+  -- filenames
   return {
     input_dataset  = in_ds,
     output_dataset = (#labels > 0 and dataset.matrix(matrix(labels))) or nil,
@@ -494,57 +522,73 @@ function common.load_data(list,params)
   list_names
 end
 
+-- compute mean and deviation from a given dataset
 function common.compute_means_devs(ds)
   return ds:mean_deviation()
 end
 
+-- apply zero-mean one-variance transformation given a dataset and mean/devs
+-- tables.
 function common.apply_std(ds,means,devs)
   print("# Applying standarization")
   return dataset.sub_and_div_normalization(ds,means,devs)
 end
 
+-- different possible combinations of every probability computed for every file
 local comb_options = {
+  -- just take the maximum
   max = function(slice,r) slice:max(1,r) end,
+  -- a special version of arithmetic mean
   amean = function(slice,r) slice:sum(1, r) r:scal(1/math.sqrt(slice:size())) end,
+  -- geometric mean of the complement probabilities
   gmean = function(slice,r) r:set(1,1, 1.0 - gmean( 1.0 - slice )) end,
+  -- harmonic mean of complement probabilities
   hmean = function(slice,r) r:set(1,1, 1.0 - hmean(1.0 - slice)) end,
 }
 function common.combine_filename_outputs(outputs, nrows, comb_name, target_check)
   assert(outputs:max() <= 1)
   assert(outputs:min() >= 0)
   local dim = outputs:dim()
+  -- sanity check
   assert((#dim == 2) and (dim[1] % nrows == 0) and (dim[2] == 1))
+  -- result matrix, after combine all the given outputs
   local result = matrix(dim[1]/nrows,1)
   local k=0
   for i=1,dim[1],nrows do
     k=k+1
-    local slice = outputs({i, i + nrows - 1}, 1)
-    local r = result(k,1)
+    local slice = outputs({i, i + nrows - 1}, 1) -- slice of the output matrix
+    local r = result(k,1) -- result component
     local comb_func = assert(comb_options[comb_name], "Incorrect combine name")
-    comb_func(slice,r)
+    comb_func(slice,r) -- compute combination and store result at r
+    -- sanity check for target matrices
     assert(not target_check or slice:sum() == slice:size() or slice:sum() == 0)
   end
   return result
 end
 
+-- save test predictions given the output filename, the test filenames list,
+-- the dataset with all data, the classify function and its arguments.
 function common.save_test(output, names, ds, params, classify, ...)
   local nrows = ds:numPatterns()/#names
   assert(math.floor(nrows) == nrows)
   local f = assert(io.open(output, "a"))
   local ds = dataset.token.wrapper(ds)
+  -- auxiliar output file (for system combination)
   local g = assert(io.open("%svalidation_%s.test.txt"%{params.PREFIX,
                                                        params.SUBJECT}, "w"))
+  -- for every possible file
   for pat,indices in trainable.dataset_multiple_iterator{ bunch_size = nrows,
                                                           datasets = { ds }, } do
     assert(#indices == nrows)
-    local id = (indices[1]-1)/nrows + 1
-    local result = classify(pat:clone(), ...)
-    if params.log_scale then result = result:clone():exp() end
-    -- remove zero values
-    -- result:cmul(result:clone():gt(1e-20))
+    local id = (indices[1]-1)/nrows + 1 -- index of the file
+    local result = classify(pat:clone(), ...) -- compute result
+    if params.log_scale then result = result:clone():exp() end -- scale it
+    -- combine all the outputs
     result = common.combine_filename_outputs(result, nrows, params.combine)
     result:clamp(0,1)
+    -- sanity check
     assert(result:dim(1) == 1 and result:dim(2) == 1)
+    -- write the output into files f and g
     f:write(names[id]:basename())
     f:write(".mat,")
     f:write(result:get(1,1))
@@ -561,7 +605,7 @@ function common.save_test(output, names, ds, params, classify, ...)
   g:close()
 end
 
--- A into a file the validation prediction and target matrices.
+-- Append into a file the validation prediction and target matrices.
 function common.append(where, output, tgt)
   assert(output:dim(1) == tgt:dim(1))
   assert(#output:dim() == 2)
@@ -573,6 +617,7 @@ function common.append(where, output, tgt)
     m:write(f, { tab=true })
     f:close()
   end
+  -- compute mean of positive and negative samples (for convergence check)
   local mv0,mv1 = stats.mean_var(),stats.mean_var()
   output:map(tgt, function(x,y) if y>0 then mv1:add(x) else mv0:add(x) end end)
   local a0,v0 = mv0:compute()
@@ -582,6 +627,8 @@ function common.append(where, output, tgt)
   return a0,a1,v0,v1
 end
 
+-- returns properties of the given loss function name: log_scale, smooth,
+-- loss_param table
 function common.loss_stuff(loss)
   local log_scale,smooth,loss_param
   if loss == "batch_fmeasure_micro_avg" or loss == "batch_fmeasure_macro_avg" then
@@ -597,122 +644,16 @@ function common.loss_stuff(loss)
   return log_scale,smooth,loss_param
 end
 
-local function compute_pca(ds,by_rows,save_matrix)
-  local m
-  if not by_rows then
-    m = matrix(ds:numPatterns(), ds:patternSize())
-    for ipat,pat in ds:patterns() do
-      m:select(1,ipat):copy( pat:rewrap(pat:size()) )
-    end
-  else
-    local dims = ds:getPattern(1):dim()
-    assert(#dims == 3)
-    m = matrix(ds:numPatterns()*dims[1],dims[2]*dims[3])
-    local k=0
-    for ipat,pat in ds:patterns() do
-      for i=1,dims[1] do
-        k=k+1
-        m:select(1,k):copy( pat:select(1,i):contiguous():
-                              rewrap(dims[2]*dims[3]) )
-      end
-    end
-  end
-  if save_matrix then
-    m:toTabFilename(save_matrix)
-  end
-  local U,S,VT = stats.pca(m)
-  local takeN,eigen_value,prob_mass = stats.pca_threshold(S,0.99)
-  return U,S,VT,takeN,eigen_value,prob_mass
-end
--- make it callable from outside this module
-common.compute_pca = compute_pca
-
-local function push_whitening_component(the_net, wh_component, ds, by_rows, takeN)
-  if not by_rows then
-    the_net:push(wh_component)
-    return wh_component:get_output_size()
-  else
-    local dims = ds:getPattern(1):dim()
-    local takeN = takeN or dims[2]*dims[3]
-    the_net:push( ann.components.rewrap{ size=dims } )
-    the_net:push( ann.components.copy{ times = dims[1], input = dims[1]*dims[2]*dims[3] } )
-    local join = ann.components.join()
-    for i=1,dims[1] do
-      local stack = ann.components.stack()
-      stack:push( ann.components.select{ dimension=1, index=i }  )
-      stack:push( ann.components.flatten() )
-      stack:push( wh_component:clone() )
-      stack:build{ input = dims[1]*dims[2]*dims[3], output = takeN }
-      join:add( stack )
-    end
-    the_net:push( join )
-    return dims[1]*takeN
-  end
-end
-
-function common.push_zca_whitening(the_net, ds, by_rows)
-  print("# COMPUTING ZCA")
-  local U,S,VT,takeN,eigen_value,prob_mass = compute_pca(ds,by_rows)
-  local epsilon = by_rows and 0.01 or 0.1
-  print("#      PCA 0.99 IN SAMPLE ", takeN, U:dim(1))
-  print("#      PCA 0.99 PROB      ", prob_mass)
-  print("#      PCA 0.99 EIG       ", eigen_value)
-  print("#      EPSILON            ", epsilon)
-  return push_whitening_component(the_net,
-                                  ann.components.zca_whitening{ U=U, S=S, epsilon=epsilon, takeN = takeN, },
-                                  ds, by_rows)
-end
-
-function common.push_pca_reduction(the_net, ds, by_rows)
-  print("# COMPUTING PCA")
-  local U,S,VT,takeN,eigen_value,prob_mass = compute_pca(ds,by_rows)
-  local epsilon = by_rows and 0.01 or 0.1
-  print("#      PCA 0.99 IN SAMPLE ", takeN, U:dim(1))
-  print("#      PCA 0.99 PROB      ", prob_mass)
-  print("#      PCA 0.99 EIG       ", eigen_value)
-  print("#      EPSILON            ", epsilon)
-  return push_whitening_component(the_net,
-                                  ann.components.pca_whitening{ U=U, S=S, epsilon=epsilon, takeN = takeN, },
-                                  ds, by_rows, takeN)
-end
-
-function common.build_mlp_extractor(params)
-  local dims = params.train_ds:getPattern(1):dim()
-  local isize = params.input
-  local the_net = ann.components.stack():push( ann.components.flatten() )
-  if params.zca then
-    isize = common.push_zca_whitening(the_net, params.train_ds, params.by_rows)
-  elseif params.pca then
-    isize = common.push_pca_reduction(the_net, params.train_ds, params.by_rows)
-  end
-  for i,hsize in ipairs( params.layers ) do
-    if hsize == 0 then break end
-    the_net:
-      push( ann.components.hyperplane{ input=isize, output=hsize, bias_weights="b"..i, dot_product_weights="w"..i, } ):
-      push( ann.components.actf[params.actf]() )
-    isize = hsize
-    if params.dropout > 0 then
-      print("# DROPOUT LAYER = ", i)
-      the_net:push( ann.components.dropout{ random=params.perturbation_random,
-                                            prob=params.dropout } )
-    end
-  end
-  return the_net,isize
-end
-
 function common.build_mlp_extractor_EM(params)
   local isize = params.input
   local the_net = ann.components.stack():push( ann.components.flatten() )
-  if params.zca then
-    isize = common.push_zca_whitening(the_net, params.train_ds)
-  elseif params.pca then
-    isize = common.push_pca_reduction(the_net, params.train_ds)
-  end
   for i,hsize in ipairs( params.layers ) do
     if hsize == 0 then break end
     print("# ADDING LAYER = ", i, "SIZE = ", hsize)
     the_net:
-      push( ann.components.hyperplane{ input=isize, output=hsize, bias_weights="b"..i, dot_product_weights="w"..i, } ):
+      push( ann.components.hyperplane{ input=isize, output=hsize,
+                                       bias_weights="b"..i,
+                                       dot_product_weights="w"..i, } ):
       push( ann.components.actf[params.actf]() )
     isize = hsize
     if params.dropout > 0 then
@@ -751,44 +692,39 @@ function common.store_cross_validation_blocks(output_dir)
   end
 end
 
+-- print the max norm2 of all the weights matrices
 function common.print_weights_norm2(trainer, name)
   local mapf = function(name,w) return "%7.3f"%{trainer:norm2(name)} end
   return iterator(trainer:iterate_weights(name)):map(mapf):concat(" ", " ")
 end
 
-function common.expectation(classify, input_ds, output_ds, TH, log_scale, ...)
-  local orig_tgt_m = output_ds:toMatrix()
-  local out_m = classify(input_ds:toMatrix(), ...)
-  if log_scale then out_m:exp() end
-  print("# MAX ACTIVATION = ", (out_m:max()))
-  out_m:copy(out_m:gt(TH):to_float()):cmul(orig_tgt_m)
-  local result_positives = out_m:sum()
-  print("# ORIG POSITIVES =   ", orig_tgt_m:sum())
-  print("# REMOVE SAMPLES =   ", (orig_tgt_m - out_m):sum())
-  print("# RESULT POSITIVES = ", result_positives)
-  return result_positives > 0 and dataset.matrix(out_m) or false
-end
-
-function common.validate_EM(classify, val_data, loss, nrows, log_scale, combine, ...)
+-- return validation loss given classify function, val_data table, loss
+-- function, number of rows per file, log_scale parameter, combine method and
+-- extra arguments for classify function
+function common.validate(classify, val_data, loss, nrows, log_scale, combine, ...)
   assert(classify and val_data and loss)
   assert(math.floor(nrows) == nrows)
   loss:reset()
   local in_ds = dataset.token.wrapper(val_data.input_dataset)
   local tgt_ds = val_data.output_dataset
+  -- for every file
   for in_pat,tgt_pat,indices in trainable.dataset_multiple_iterator{ bunch_size = nrows,
                                                                      datasets = { in_ds,
                                                                                   tgt_ds }, } do
+    -- sanity check
     assert(#indices == nrows)
-    local id = (indices[1]-1)/nrows + 1
-    local result = classify(in_pat:clone(), ...)
-    if log_scale then result = result:clone():exp() end
-    -- remove zero values
-    -- result:cmul(result:clone():gt(1e-20))
+    local id = (indices[1]-1)/nrows + 1 -- compute index of the file
+    local result = classify(in_pat:clone(), ...) -- compute output
+    if log_scale then result = result:clone():exp() end -- scale output
+    -- combine output
     result = common.combine_filename_outputs(result, nrows, combine):clamp(0,1)
+    -- combine target by using 'max' combination
     tgt_pat = common.combine_filename_outputs(tgt_pat:clone(),
                                               nrows, "max", true)
+    -- sanity check
     assert(result:dim(1) == 1 and result:dim(2) == 1)
-    if log_scale then result:log() end
+    if log_scale then result:log() end -- rescale again, for the loss function
+    -- compute loss
     local l = table.pack(loss:compute_loss(result:clone(),
                                            tgt_pat:clone()))
     if l[1] then

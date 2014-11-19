@@ -38,16 +38,20 @@ local WADVANCE  = 30   -- seconds
 
 -- sequences output file handler
 local seqf = io.open(SEQUENCES_PATH, "w")
-for _,conf in ipairs({
-    { HZ=400, MASK="/Dog_*/*.mat", }, -- Dogs
-    { HZ=5000, MASK="/Patient_*/*.mat", }, -- Patients
+for _,conf in ipairs({ "/Dog_*/*.mat",     -- Dogs
+                       "/Patient_*/*.mat", -- Patients
 }) do
-  local HZ = conf.HZ
+  -- list of filenames
+  local list = glob(DATA_PATH .. conf.MASK)
+  -- load first matlab matrix to get subject sampling frequency (it must be the
+  -- same over all files)
+  local _, HZ = common.load_matlab_file(list[1])
+  -- round sampling frequency
+  HZ = math.round(HZ)
   -- the FFT_SIZE is the closest power of two
   local FFT_SIZE = 2^(math.floor(math.log(HZ*WSIZE) / math.log(2)))
   -- compute the filter function following PLOS ONE paper + logarithm
   local filter   = common.compute_PLOS_filter(HZ, FFT_SIZE)
-  local list = glob(DATA_PATH .. conf.MASK)
   -- process all subjects applying filter function
   local sequences = parallel_foreach(NUM_CORES, list,
                                      common.make_prep_function(HZ, FFT_SIZE,
