@@ -20,13 +20,7 @@ for(subject in c("Dog_1", "Dog_2","Dog_3","Dog_4","Dog_5","Patient_1","Patient_2
             eig <- matrix(nrow=0,ncol=nchannels)
             for( t in seq(0,nsamples-ws,wa) ) {
                 slice <- (t+1):(t+ws)
-                S <- matrix(ncol=nchannels,nrow=nchannels)
-                for(i in 1:nchannels){
-                    for(j in 1:nchannels){
-                        S[i,j] <- cor(A[i,slice],A[j,slice])
-                    }
-                }
-                eig <- rbind(eig,eigen(S)$values)
+                eig <- rbind(eig,eigen(cor(t(A[,slice])))$values)
             } # for every window
             write.matrix(eig,file=dest.file)
         } # if file not exists
