@@ -34,6 +34,11 @@ cleanup()
     done
 }
 
+##################
+## FFT FEATURES ##
+##################
+
+echo "Computing FFT features"
 # Avoid FFT computation if not needed
 if [[ ! -e $FFT_PATH ]]; then
     # Computes FFT features. Additionally it writes sequence numbers to
@@ -52,3 +57,16 @@ if [[ $N -ne $NUMBER_FFT_FILES ]]; then
     cleanup $FFT_PATH $SEQUENCES_PATH
     exit 10
 fi
+
+###############################
+## WINDOWED CORRELATIONS EIG ##
+###############################
+
+echo "Computing windowed correlation matrix eigen values"
+mkdir -p $WINDOWED_COR_PATH
+if ! Rscript scripts/PREPROCESS/correlation_60s_30s.R; then
+    echo "ERROR: Unable to compute matrix correlation eigen values"
+    cleanup $WINDOWED_COR_PATH
+    exit 10
+fi
+

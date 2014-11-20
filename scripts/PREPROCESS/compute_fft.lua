@@ -38,11 +38,11 @@ local WADVANCE  = 30   -- seconds
 
 -- sequences output file handler
 local seqf = io.open(SEQUENCES_PATH, "w")
-for _,conf in ipairs({ "/Dog_*/*.mat",     -- Dogs
+for _,MASK in ipairs({ "/Dog_*/*.mat",     -- Dogs
                        "/Patient_*/*.mat", -- Patients
 }) do
   -- list of filenames
-  local list = glob(DATA_PATH .. conf.MASK)
+  local list = glob(DATA_PATH .. MASK)
   -- load first matlab matrix to get subject sampling frequency (it must be the
   -- same over all files)
   local _, HZ = common.load_matlab_file(list[1])

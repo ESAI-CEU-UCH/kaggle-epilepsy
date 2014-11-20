@@ -346,8 +346,8 @@ end
 function common.make_prep_function(HZ,FFT_SIZE,WSIZE,WADVANCE,out_dir,filter)
   return function(mat_filename)
     print("#",mat_filename)
-    collectgarbage("collect")
     local m,hz,N,seq = common.load_matlab_file(mat_filename)
+    collectgarbage("collect")
     -- sanity check
     assert( math.abs(hz - HZ) < 1 )
     -- fft_tbl is an array of N FFT matrices with size TxF, where N is the
