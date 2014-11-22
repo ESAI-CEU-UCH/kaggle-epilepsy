@@ -46,6 +46,7 @@ for(subject in c("Dog_1", "Dog_2","Dog_3","Dog_4","Dog_5","Patient_1","Patient_2
                 eig <- rbind(eig,eigen(cor(t(A[,slice])))$values)
             } # for every window
             write.matrix(eig,file=dest.file)
+            rm(A)
         } # if file not exists
     } # for each f in files
 } # for each subject
