@@ -70,3 +70,26 @@ if ! Rscript scripts/PREPROCESS/correlation_60s_30s.R; then
     exit 10
 fi
 
+###########################
+## PCA OVER FFT FEATURES ##
+###########################
+
+echo "Computing PCA transformation of FFT features"
+if [[ ! -e $PCA_TRANS_PATH ]]; then
+    mkdir -p $PCA_TRANS_PATH
+    if ! Rscript scripts/PREPROCESS/compute_pca.R; then
+        echo "ERROR: Unable to compute PCA transformation"
+        cleanup $PCA_TRANS_PATH
+        exit 10
+    fi
+fi
+
+echo "Applying PCA transformation to FFT features"
+if [[ ! -e $FFT_PCA_PATH ]]; then
+    mkdir -p $FFT_PCA_PATH
+    if ! $APRIL_EXEC scripts/PREPROCESS/apply_pca.lua $FFT_PATH $PCA_TRANS_PATH $FFT_PCA_PATH; then
+        echo "ERROR: Unable to apply PCA transformation to FFT data"
+        cleanup $FFT_PCA_PATH
+    fi
+fi
+
