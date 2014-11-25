@@ -62,10 +62,10 @@ fi
 ## WINDOWED CORRELATIONS EIG ##
 ###############################
 
-echo "Computing windowed correlation matrix eigen values"
+echo "Computing eigen values of windowed correlations matrix"
 mkdir -p $WINDOWED_COR_PATH
 if ! Rscript scripts/PREPROCESS/correlation_60s_30s.R; then
-    echo "ERROR: Unable to compute matrix correlation eigen values"
+    echo "ERROR: Unable to compute eigen values of correlations matrix"
     cleanup $WINDOWED_COR_PATH
     exit 10
 fi
