@@ -185,3 +185,8 @@ same software configuration and the following hardware description:
 - Dell PowerEdge 210 II server rack.
 - Intel Xeon E3-1220 v2 at 3.10GHz with 16GB RAM.
 - 2.6TB of NFS storage.
+
+The minimum requirements for the correct execution of this software are:
+
+- 6GB of RAM.
+- 1.5TB of disk space.

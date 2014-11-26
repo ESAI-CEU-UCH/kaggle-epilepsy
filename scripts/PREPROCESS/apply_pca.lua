@@ -33,8 +33,8 @@ local common = require "common"
 local read = matrix.fromTabFilename
 
 local pca_data = {}
-for subject in ipars{ "Dog_1", "Dog_2", "Dog_3", "Dog_4", "Dog_5",
-                      "Patient_1", "Patient_2" } do
+for _,subject in ipairs{ "Dog_1", "Dog_2", "Dog_3", "Dog_4", "Dog_5",
+                         "Patient_1", "Patient_2" } do
   print("# " .. subject)
   local center = read("%s/%s_pca_center.txt"%{PCA_DATA_PATH, subject})
   local scale = 1/read("%s/%s_pca_scale.txt"%{PCA_DATA_PATH, subject})
@@ -52,6 +52,7 @@ for subject in ipars{ "Dog_1", "Dog_2", "Dog_3", "Dog_4", "Dog_5",
   local files_iterator = iterator(io.popen("ls %s/%s*channel_01*"%{FFT_PCA_PATH,
                                                                    subject}):lines())
   for filename in files_iterator do
+    collectgarbage("collect")
     local mask = filename:gsub("channel_01", "channel_??")
     local m = matrix.join(2, iterator(glob(mask)):map(read):table())
     local out = transform(m)
