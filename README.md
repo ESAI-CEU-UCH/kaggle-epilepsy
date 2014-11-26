@@ -5,9 +5,14 @@ Herrera (ESAI-CEU-UCH) at Kaggle challenge in seizure epilepsy
 prediction. The proposed system was positioned as **4th** at Kaggle
 (https://www.kaggle.com/c/seizure-prediction).
 
-Different kind of input features (different preprocessing
-pipelines) and different statistical models are being proposed. This diversity
-was motivated to improve model combination result.
+Different kind of input features (different preprocessing pipelines) and
+different statistical models are being proposed. This diversity was motivated to
+improve model combination result.
+
+It is important to note that any of the proposed systems use test set for any
+calibration or related purpose. The competition allow to do this model
+calibration using test set, but doing it will reduce the reproducibility of the
+results in a real world implementation.
 
 # Preprocessing
 
@@ -117,6 +122,16 @@ following:
 | **KNN**  | COVRED**     | **0.6900** | **0.6901**   |
 | UNIFORM  | ENSEMBLE     | -          | 0.8048       |
 | BMC      | ENSEMBLE     | 0.9271     | 0.8249       |
+
+Previous table shows that logistic regression model was the worst in terms of
+generalization abiltiy. The application of PCA allows to improve the public AUC
+results by 0.025 for KNN model and 0.033 for ANN model. ICA obtains improvements
+similar to PCA. The advantage of deep ANNs (with more than two hidden layers) is
+not clear, but the best public AUC was obtained by an ANN with five hidden
+layers, improving by 0.004 the public AUC of the best ANN2. Global features as
+CORG and COVRED show strong correlation between cross-validation AUC and public
+test AUC. Finally, the use of BMC ensemble method allow to improve the public
+AUC in 0.031 points compared to the ANN5 model.
 
 Finally, the private AUC for the two selected models is shown in the following
 table.
