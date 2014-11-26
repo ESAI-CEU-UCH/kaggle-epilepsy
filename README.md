@@ -189,4 +189,4 @@ same software configuration and the following hardware description:
 The minimum requirements for the correct execution of this software are:
 
 - 6GB of RAM.
-- 1.5TB of disk space.
+- 1.5GB of disk space.
