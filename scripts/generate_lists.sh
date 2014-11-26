@@ -28,7 +28,7 @@ outdir=$LISTS_PATH
 if [[ -z $outdir ]]; then
     echo -n "Unable to find environment variables, please check "
     echo -n "that scripts/conf.sh has been loaded by using: "
-    echo -n ". scripts/env.sh"
+    echo ". scripts/env.sh"
     exit 10
 fi
 dirs=$1
