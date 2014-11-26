@@ -86,12 +86,10 @@ and uses these weights to combine output probabilities in submission files.
 | Model    | FEATURES | CV AUC | Pub. AUC |
 |----------|----------|--------|----------|
 |  LR      | FFT      | 0.9337 | 0.6784   |
-|----------|----------|--------|----------|
 | KNN      | FFT      | 0.8008 | 0.6759   |
 | KNN      | FFT+CORW | 0.7994 | 0.7040   |
 | **KNN**  | PCA+CORW | 0.8104 | 0.7288   |
 | **KNN**  | ICA+CORW | 0.8103 | 0.6840   |
-|----------|----------|--------|----------|
 | ANN2     | FFT+CORW | 0.9072 | 0.7489   |
 | ANN2     | PCA+CORW | 0.9082 | 0.7815   |
 | **ANN2p**| PCA+CORW | 0.9175 | 0.7895   |
@@ -100,10 +98,8 @@ and uses these weights to combine output probabilities in submission files.
 | ANN4     | PCA+CORW | 0.9268 | 0.7772   |
 | **ANN5** | PCA+CORW | 0.9283 | 0.7937   |
 | ANN6     | PCA+CORW | 0.9291 | 0.7722   |
-|----------|----------|--------|----------|
 | **KNN**  | CORG     | 0.7097 | 0.6552   |
 | **KNN**  | COVRED   | 0.6900 | 0.6901   |
-|----------|----------|--------|----------|
 | UNIFORM  | ENSEMBLE | -      | 0.8048   |
 | BMC      | ENSEMBLE | 0.9271 | 0.8249   |
 
