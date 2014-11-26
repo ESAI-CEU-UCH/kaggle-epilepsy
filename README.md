@@ -14,7 +14,7 @@ was motivated to improve model combination result.
 Several preprocessing pipelines has been performed, being the most important the
 FFT plus PCA step.
 
-## FFT features plus PCA
+## FFT features plus PCA/ICA
 
 This is the most important kind of proposed features, obtaining the best
 standalone result. The process follow this steps for each input file:
@@ -40,7 +40,9 @@ A PCA transformation has been computed over the concatenation by rows of all
 training data matrices, leaving test data hidden for this step. Data has been
 centered and scaled before PCA. After computing centers, scales and PCA matrix
 transformation, it has been applied to all the available data, training and
-test.
+test. In a similar fashion as for PCA, Indenpendent Component Analysis (ICA) has
+been performed. The advantage of PCA/ICA transformation is their ability to
+remove linear correlations between pairs of features.
 
 ## Eigen values of pairwise channels correlation matrix
 
@@ -50,12 +52,15 @@ test.
 
 ## Global statistical features
 
+# Cross-validation algorithm
+
 # Models
 
 Three different models has been tested. Logistic regression as initial baseline
 following a simple linear regression approach. KNNs for a more sophisticated
-model. And finally dropout ANNs with different number of layers and ReLUs as
-neurons.
+model. In order to exploit non-linear relations in data, dropout ANNs with
+different number of layers and ReLUs as neurons. And finally, an ensemble of
+several models has been performed.
 
 ## Logistic regression
 
@@ -63,7 +68,52 @@ neurons.
 
 ## Artificial Neural Networks
 
+## Ensemble of models
+
+All the proposed models have been trained independently, computing
+cross-validation probabilities for every training file, and test output
+submission file.
+
+Initially, a simple uniform linear combination of probability outputs in
+submission files has been tested. In order to improve this result, a
+[Bayesian Model Combination](https://en.wikipedia.org/wiki/Ensemble_learning#Bayesian_model_combination)
+(BMC) algorithm has been implemented in Lua for APRIL-ANN toolkit. BMC algorithm
+uses cross-validation output probabilities to optimize the combination weights,
+and uses these weights to combine output probabilities in submission files.
+
 # Results
+
+| Model    | FEATURES | CV AUC | Pub. AUC |
+|----------|----------|--------|----------|
+|  LR      | FFT      | 0.9337 | 0.6784   |
+|----------|----------|--------|----------|
+| KNN      | FFT      | 0.8008 | 0.6759   |
+| KNN      | FFT+CORW | 0.7994 | 0.7040   |
+| **KNN**  | PCA+CORW | 0.8104 | 0.7288   |
+| **KNN**  | ICA+CORW | 0.8103 | 0.6840   |
+|----------|----------|--------|----------|
+| ANN2     | FFT+CORW | 0.9072 | 0.7489   |
+| ANN2     | PCA+CORW | 0.9082 | 0.7815   |
+| **ANN2p**| PCA+CORW | 0.9175 | 0.7895   |
+| **ANN2** | ICA+CORW | 0.9104 | 0.7772   |
+| ANN3     | PCA+CORW | 0.9188 | 0.7690   |
+| ANN4     | PCA+CORW | 0.9268 | 0.7772   |
+| **ANN5** | PCA+CORW | 0.9283 | 0.7937   |
+| ANN6     | PCA+CORW | 0.9291 | 0.7722   |
+|----------|----------|--------|----------|
+| **KNN**  | CORG     | 0.7097 | 0.6552   |
+| **KNN**  | COVRED   | 0.6900 | 0.6901   |
+|----------|----------|--------|----------|
+| UNIFORM  | ENSEMBLE | -      | 0.8048   |
+| BMC      | ENSEMBLE | 0.9271 | 0.8249   |
+
+
+
+| Model | FEATURES | Priv. AUC |
+|-------|----------|-----------|
+| ANN5  | PCA+CORW | 0.7644    |
+| BMC   | ENSEMBLE | 0.7935    |
+
 
 # Conclusions
 
