@@ -93,3 +93,16 @@ if [[ ! -e $FFT_PCA_PATH ]]; then
     fi
 fi
 
+###########################
+## ICA OVER FFT FEATURES ##
+###########################
+
+echo "Computing and applying ICA transformation of FFT features"
+if [[ ! -e $FFT_ICA_PATH ]]; then
+    mkdir -p $FFT_ICA_PATH
+    if ! Rscript scripts/PREPROCESS/compute_ica.R; then
+        echo "ERROR: Unable to compute and apply ICA transformation"
+        cleanup $FFT_ICA_PATH
+        exit 10
+    fi
+fi
