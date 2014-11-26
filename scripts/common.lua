@@ -31,8 +31,8 @@ apply(function(line)
       local k=line:match("^export ([^%s]+)%s*=%s*[^%s]+$")
       if k then
         local v=april_assert(os.getenv(k), "%s %s %s",
-                             "Unable to load environment variables, please check ",
-                             "that scripts/conf.sh has been loaded by using: ",
+                             "Unable to load environment variables, please check",
+                             "that scripts/conf.sh has been loaded by using:",
                              ". scripts/env.sh")
         common[k] = v
       end
