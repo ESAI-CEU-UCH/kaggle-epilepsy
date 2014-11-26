@@ -132,7 +132,7 @@ being one of the following list:
 | ANN4     | PCA+CORW     | 0.9268     | 0.7772       |
 | **ANN5** | **PCA+CORW** | **0.9283** | **0.7937**   |
 | ANN6     | PCA+CORW     | 0.9291     | 0.7722       |
-| **KNN**  | CORG**       | **0.7097** | **0.6552**   |
+| **KNN**  | **CORG**     | **0.7097** | **0.6552**   |
 | **KNN**  | **COVRED**   | **0.6900** | **0.6901**   |
 | UNIFORM  | ENSEMBLE     | -          | 0.8048       |
 | BMC      | ENSEMBLE     | 0.9271     | 0.8249       |
