@@ -36,6 +36,8 @@ standalone result. The process follow this steps for each input file:
    alpha (8Hz - 12Hz), beta (12Hz - 30Hz), low-gamma (30Hz - 70Hz), high-gamma
    (70Hz - 180Hz). The mean in the corresponding frequency bands has been
    computed.
+4. The output of the filter bank is compressed by computing the logarithm of
+   the values.
 
 For every file, it is computed a matrix with 19 rows (windows of 60s with 50%
 overlapping) and 6*CHANNELS columns. This FFT transformation has been applied
@@ -90,20 +92,32 @@ and uses these weights to combine output probabilities in submission files.
 
 Different models and features combinations has been tested. The following table
 summarizes the cross-validation AUC and public test AUC for the most important
-combinations. In the table, model column contains the model, being one of the
+combinations. In the table, first column contains the model, being one of the
 following:
 
-- Logistic regression: LR.
-- K-Nearest-Neighbors with K=40: KNN.
-- Artificial Neural Networks with 50% dropout and ReLU neurons: ANN2 for two
+- LR: Logistic regression.
+- KNN: K-Nearest-Neighbors with K=40.
+- ANN: Artificial Neural Networks with 50% dropout and ReLU neurons. ANN2 for two
   hidden layers, ANN2p for two hidden layers with different random seed,
   ANN3 for three hidden layers, and so on.
-- Ensemble of the most promising models, indicated in bold face: UNIFORM is a
-  linear combination with uniformly distributed weights; BMC is linear
-  combination where weights are estimated following BMC optimizing
+- UNIFORM or BMC: ensemble of the most promising systems, indicated in bold
+  face. UNIFORM is a linear combination with uniformly distributed weights; BMC
+  is linear combination where weights are estimated following BMC optimizing
   cross-validation likelihood.
 
-| Model    | FEATURES     | CV AUC     | Pub. AUC     |
+The second column indicates which features were used as input of the model,
+being one of the following list:
+
+- FFT: the output of the proposed filter bank plus logarithm compression.
+- FFT+CORW: the previous one plus windowed eigen values of correlation matrix.
+- PCA+CORW: the PCA transformation of FFT features plus windowed eigeb values of
+  correlation matrix.
+- ICA+CORW: idem as previos one, but using ICA instead of PCA.
+- CORG: correlation using 10 minutes window.
+- COVRED: different statistical measures over the original signal.
+- ENSEMBLE: output probabilities of the bold faced systems.
+
+| Model    | Features     | CV AUC     | Pub. AUC     |
 |----------|--------------|------------|--------------|
 |  LR      | FFT          | 0.9337     | 0.6784       |
 | KNN      | FFT          | 0.8008     | 0.6759       |
