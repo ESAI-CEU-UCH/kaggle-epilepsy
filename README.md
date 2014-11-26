@@ -59,7 +59,7 @@ remove linear correlations between pairs of features.
 Three different models has been tested. Logistic regression as initial baseline
 following a simple linear regression approach. KNNs for a more sophisticated
 model. In order to exploit non-linear relations in data, dropout ANNs with
-different number of layers and ReLUs as neurons. And finally, an ensemble of
+different number of layers and ReLU as neurons. And finally, an ensemble of
 several models has been performed.
 
 ## Logistic regression
@@ -83,33 +83,52 @@ and uses these weights to combine output probabilities in submission files.
 
 # Results
 
-| Model    | FEATURES | CV AUC | Pub. AUC |
-|----------|----------|--------|----------|
-|  LR      | FFT      | 0.9337 | 0.6784   |
-| KNN      | FFT      | 0.8008 | 0.6759   |
-| KNN      | FFT+CORW | 0.7994 | 0.7040   |
-| **KNN**  | PCA+CORW | 0.8104 | 0.7288   |
-| **KNN**  | ICA+CORW | 0.8103 | 0.6840   |
-| ANN2     | FFT+CORW | 0.9072 | 0.7489   |
-| ANN2     | PCA+CORW | 0.9082 | 0.7815   |
-| **ANN2p**| PCA+CORW | 0.9175 | 0.7895   |
-| **ANN2** | ICA+CORW | 0.9104 | 0.7772   |
-| ANN3     | PCA+CORW | 0.9188 | 0.7690   |
-| ANN4     | PCA+CORW | 0.9268 | 0.7772   |
-| **ANN5** | PCA+CORW | 0.9283 | 0.7937   |
-| ANN6     | PCA+CORW | 0.9291 | 0.7722   |
-| **KNN**  | CORG     | 0.7097 | 0.6552   |
-| **KNN**  | COVRED   | 0.6900 | 0.6901   |
-| UNIFORM  | ENSEMBLE | -      | 0.8048   |
-| BMC      | ENSEMBLE | 0.9271 | 0.8249   |
+Different models and features combinations has been tested. The following table
+summarizes the cross-validation AUC and public test AUC for the most important
+combinations. In the table, model column contains the model, being one of the
+following:
 
+- Logistic regression: LR.
+- K-Nearest-Neighbors with K=40: KNN.
+- Artificial Neural Networks with 50% dropout and ReLU neurons: ANN2 for two
+  hidden layers, ANN2p for two hidden layers with different random seed,
+  ANN3 for three hidden layers, and so on.
+- Ensemble of the most promising models, indicated in bold face: UNIFORM is a
+  linear combination with uniformly distributed weights; BMC is linear
+  combination where weights are estimated following BMC optimizing
+  cross-validation likelihood.
 
+| Model    | FEATURES     | CV AUC     | Pub. AUC     |
+|----------|--------------|------------|--------------|
+|  LR      | FFT          | 0.9337     | 0.6784       |
+| KNN      | FFT          | 0.8008     | 0.6759       |
+| KNN      | FFT+CORW     | 0.7994     | 0.7040       |
+| **KNN**  | **PCA+CORW** | **0.8104** | **0.7288**   |
+| **KNN**  | **ICA+CORW** | **0.8103** | **0.6840**   |
+| ANN2     | FFT+CORW     | 0.9072     | 0.7489       |
+| ANN2     | PCA+CORW     | 0.9082     | 0.7815       |
+| **ANN2p**| PCA+CORW**   | **0.9175** | **0.7895**   |
+| **ANN2** | ICA+CORW**   | **0.9104** | **0.7772**   |
+| ANN3     | PCA+CORW     | 0.9188     | 0.7690       |
+| ANN4     | PCA+CORW     | 0.9268     | 0.7772       |
+| **ANN5** | PCA+CORW**   | **0.9283** | **0.7937**   |
+| ANN6     | PCA+CORW     | 0.9291     | 0.7722       |
+| **KNN**  | CORG**       | **0.7097** | **0.6552**   |
+| **KNN**  | COVRED**     | **0.6900** | **0.6901**   |
+| UNIFORM  | ENSEMBLE     | -          | 0.8048       |
+| BMC      | ENSEMBLE     | 0.9271     | 0.8249       |
+
+Finally, the private AUC for the two selected models is shown in the following
+table.
 
 | Model | FEATURES | Priv. AUC |
 |-------|----------|-----------|
 | ANN5  | PCA+CORW | 0.7644    |
 | BMC   | ENSEMBLE | 0.7935    |
 
+The private AUC of the BMC ensemble is the second best if we compare it to all
+our submissions, however, the difference with the best private AUC is not
+significant, the best one has a private AUC of 0.7958.
 
 # Conclusions
 
