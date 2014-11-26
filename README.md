@@ -179,11 +179,11 @@ based distributions, but not tested.
 
 ## Hardware
 
-The experimentation has been performed over a cluster of three computers with
-same software configuration and the following hardware description:
+The experimentation has been performed in a cluster of **three** computers
+with same hardware configuration:
 
 - Dell PowerEdge 210 II server rack.
-- Intel Xeon E3-1220 v2 at 3.10GHz with 16GB RAM.
+- Intel Xeon E3-1220 v2 at 3.10GHz with 16GB RAM (4 cores).
 - 2.6TB of NFS storage.
 
 The minimum requirements for the correct execution of this software are:

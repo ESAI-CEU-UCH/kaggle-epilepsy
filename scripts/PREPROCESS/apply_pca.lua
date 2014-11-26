@@ -26,6 +26,8 @@ local FFT_DATA_PATH = assert(arg[1], "Needs 1st argument with FFT source path")
 local PCA_DATA_PATH = assert(arg[2], "Needs 2nd argument with PCA source path")
 local OUTPUT_PATH = assert(arg[3], "Needs 3rd argument with destination path")
 
+local NUM_CORES = util.omp_get_num_threads()
+
 package.path = package.path .. ";./scripts/?.lua"
 --
 local common = require "common"
@@ -49,14 +51,18 @@ for _,subject in ipairs{ "Dog_1", "Dog_2", "Dog_3", "Dog_4", "Dog_5",
     return x * rotation
   end
   --
-  local files_iterator = iterator(io.popen("ls %s/%s*channel_01*"%{FFT_PCA_PATH,
-                                                                   subject}):lines())
-  for filename in files_iterator do
-    collectgarbage("collect")
-    local mask = filename:gsub("channel_01", "channel_??")
-    local m = matrix.join(2, iterator(glob(mask)):map(read):table())
-    local out = transform(m)
-    out:toTabFilename("%s/%s.txt"%{OUTPUT_PATH,
-                                   filename:gsub(".channel_.*$","")})
-  end
+  local files = iterator(io.popen("ls %s/%s*channel_01*"%{FFT_DATA_PATH,
+                                                          subject}):lines()):table()
+  assert(#files > 0, "Error listing files")
+  parallel_foreach(NUM_CORES, files,
+                   function(filename)
+                     collectgarbage("collect")
+                     local mask = filename:gsub("channel_01", "channel_??")
+                     local list = glob(mask)
+                     local m = matrix.join(2, iterator(list):map(read):table())
+                     local out = transform(m)
+                     out:toTabFilename("%s/%s.txt"%{OUTPUT_PATH,
+                                                    filename:basename():
+                                                      gsub(".channel_.*$","")})
+  end)
 end
