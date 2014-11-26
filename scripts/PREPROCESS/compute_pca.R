@@ -23,15 +23,26 @@
 
 library(plyr)
 
+readMatrix <- function(path) { read.table(path, header=F, sep=" ") }
+
 sources <- Sys.getenv("FFT_PATH")
 dest <- Sys.getenv("PCA_TRANS_PATH")
 
-for(subject in c("Dog_1", "Dog_2","Dog_3","Dog_4","Dog_5","Patient_1","Patient_2")){
-    match <- paste("^", subject, "_(.*)ictal(.*)channel_(..).csv.gz$", sep="")
-    list <- list.files(pattern = match, full.names=TRUE)
-    data.list = ldply(list, function(path) { dum = read.table(path, header=F, sep=" ")})
-    data.binded <- do.call(cbind, data.list)
-    pca <- prcomp(data.binded, scale=TRUE, center=TRUE)
+for (subject in c("Dog_1", "Dog_2", "Dog_3", "Dog_4", "Dog_5",
+                  "Patient_1", "Patient_2")) {
+    write(paste("#",subject), stdout())
+    i=0
+    cols = list()
+    while(TRUE) {
+        i=i+1
+        match <- sprintf("^%s_(.*)ictal(.*)channel_%02d.csv.gz$", subject, i)
+        list <- list.files(path = sources, pattern = match, full.names=TRUE)
+        if (length(list) == 0) break;
+        cols[[i]] <- do.call(cbind, ldply(list, readMatrix))
+    }
+    data <- do.call(cbind, cols)
+    rm(cols)
+    pca <- prcomp(data, scale=TRUE, center=TRUE)
     output.rotation <- paste(dest, "/", subject, "_pca_rotation.txt", sep="")
     output.center <- paste(dest, "/", subject, "_pca_center.txt", sep="")
     output.scale <- paste(dest, "/", subject, "_pca_scale.txt", sep="")
