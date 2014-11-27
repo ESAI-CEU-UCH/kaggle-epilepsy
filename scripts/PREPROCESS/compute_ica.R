@@ -27,12 +27,10 @@ library(fda.usc)
 library(fastICA)
 library(stringr)
 
+subjects <- strsplit(Sys.getenv("SUBJECTS"), " ")
 sources <- Sys.getenv("FFT_PATH")
 files <- dir(sources)
 destinationPath <- Sys.getenv("WINDOWED_COR_PATH")
-
-subjects <- c("Dog_1", "Dog_2", "Dog_3", "Dog_4", "Dog_5",
-              "Patient_1", "Patient_2")
 
 getChannelNumber <- function(path) {
     as.numeric(gsub("^.*channel_(..).*$", "\1", path))
@@ -48,8 +46,6 @@ processSet <- function(auxfiles, seg, ninter, nchannels, data, start) {
         }
     }
 }
-
-humanos<-c("N","N","N","N","N","S","S")
 
 for (hh in 1:length(individuos)){
     subject <- individuos[hh]

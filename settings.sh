@@ -1,5 +1,6 @@
 export ROOT_PATH=$(pwd)
 export DATA_PATH=DATA
+export SUBJECTS=$(find $DATA_PATH -mindepth 1 -maxdepth 1 -type d -exec basename {} ";" | sort)
 export TMP_PATH=TMP
 export LISTS_PATH=$TMP_PATH/lists
 export SEQUENCES_PATH=$TMP_PATH/SEQUENCES.txt

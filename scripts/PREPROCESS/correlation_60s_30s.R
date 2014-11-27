@@ -23,13 +23,15 @@
 
 library(R.matlab)
 library(MASS)
+
+subjects <- strsplit(Sys.getenv("SUBJECTS"), " ")
 sources <- Sys.getenv("DATA_PATH")
 destinationPath <- Sys.getenv("WINDOWED_COR_PATH")
 
 wsize <- 60
 wadvance <- 30
 
-for(subject in c("Dog_1", "Dog_2","Dog_3","Dog_4","Dog_5","Patient_1","Patient_2")){
+for(subject in subjects) {
     write(paste("#",subject), stdout())
     files <- dir(paste(sources,subject,sep="/"))
     for(f in files){

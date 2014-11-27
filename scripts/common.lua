@@ -38,6 +38,8 @@ apply(function(line)
       end
 end)
 
+common.SUBJECTS = commong.SUBJECTS:tokenize(" ")
+
 -- libraries import
 local mop   = matrix.op
 local amean = stats.amean
@@ -681,8 +683,7 @@ end
 function common.store_cross_validation_blocks(output_dir)
   os.execute("mkdir -p " .. output_dir)
   local data_0,data_1 = load_sequences(name2id)
-  for _,subject in ipairs{ "Dog_1", "Dog_2", "Dog_3", "Dog_4", "Dog_5",
-                           "Patient_1", "Patient_2" } do
+  for _,subject in ipairs( common.SUBJECTS ) do
     local blocks = compute_cross_validation_partition(subject, data_0, data_1)
     local f = assert( io.open("%s/%s"%{output_dir,subject}, "w") )
     f:write(iterator(ipairs(blocks)):

@@ -35,8 +35,7 @@ local common = require "common"
 local read = matrix.fromTabFilename
 
 local pca_data = {}
-for _,subject in ipairs{ "Dog_1", "Dog_2", "Dog_3", "Dog_4", "Dog_5",
-                         "Patient_1", "Patient_2" } do
+for _,subject in ipairs( common.SUBJECTS ) do
   print("# " .. subject)
   local center = read("%s/%s_pca_center.txt"%{PCA_DATA_PATH, subject})
   local scale = 1/read("%s/%s_pca_scale.txt"%{PCA_DATA_PATH, subject})

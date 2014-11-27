@@ -25,11 +25,11 @@ library(plyr)
 
 readMatrix <- function(path) { read.table(path, header=F, sep=" ") }
 
+subjects <- strsplit(Sys.getenv("SUBJECTS"), " ")
 sources <- Sys.getenv("FFT_PATH")
 dest <- Sys.getenv("PCA_TRANS_PATH")
 
-for (subject in c("Dog_1", "Dog_2", "Dog_3", "Dog_4", "Dog_5",
-                  "Patient_1", "Patient_2")) {
+for (subject in subjects) {
     write(paste("#",subject), stdout())
     i=0
     cols = list()
