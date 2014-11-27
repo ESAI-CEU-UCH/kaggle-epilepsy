@@ -23,6 +23,8 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 # IN THE SOFTWARE.
 
+. settings.sh
+mkdir -p $TMP_PATH
 . scripts/configure.sh
 
 cleanup()

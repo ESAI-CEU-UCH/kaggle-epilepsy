@@ -23,7 +23,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 # IN THE SOFTWARE.
 
-. scripts/env.sh
+. settings.sh
 
 # check competition data is in the proper path
 if [[ ! -e DATA/Dog_1 || ! -e DATA/Dog_2 || ! -e DATA/Dog_3 || ! -e DATA/Dog_4 || ! -e DATA/Dog_5 || ! -e DATA/Patient_1 || ! -e DATA/Patient_2 ]]; then

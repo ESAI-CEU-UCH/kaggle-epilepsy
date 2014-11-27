@@ -1,0 +1,340 @@
+\documentclass[a4paper,english,twoside]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{babel}
+\usepackage{xspace}
+\usepackage{amsmath}
+\usepackage{epsfig}
+\usepackage{graphicx}
+\usepackage{fancyhdr}
+\usepackage{calc}
+\usepackage{anysize}
+\usepackage{url}
+\marginsize{3.5cm}{3cm}{3.5cm}{3.5cm}
+
+%% %% Cabecera - Start %%
+\fancyhf{}
+\fancyhead[LO,RE]{\small \emph{TITLE}}
+\fancyhead[RO,LE]{}
+\fancyfoot[C]{\bfseries \thepage}
+\renewcommand{\headrulewidth}{0.5pt}  % headrule
+\pagestyle{fancy}
+%% %% Cabecera - End %%
+
+\newcommand{\etc}{etc.\@\xspace}
+% \setlength{\extrarowheight}{-5em}
+
+\newcommand{\argmax}{\mathop{\mbox{argmax}}}
+
+% \name{}
+\author{Francisco Zamora Martínez, Francisco J. Mu\~n\'oz-Malmaraz,\\
+  Paloma Botella-Rocamora, Juan Pardo}
+\date{November 2014}
+% \address{}
+\title{Seizure prediction using FFT, eigen values of correlation matrix,
+  artificial neural networks, k-nearest-neighbors and Bayesian model combination}
+% \school{Departamento de Sistemas Inform'aticos y Computaci'on \\
+% Universidad Polit'ecnica de Valencia, Valencia (Spain)}
+% \email{fzamora@dsic.upv.es}
+
+\begin{document}
+\maketitle
+
+\begin{itemize}
+\item[Location:] Universidad CEU Cardenal Herrera, Alfara del Patriarca,
+  Valencia, Spain. Embedded Systems and Artificial Intelligence (ESAI) research
+  group.
+\item[Email:] \{francisco.zamora, malmaraz, pbotella, juaparal\}@uch.ceu.es
+\item[Competition:] American Epilepsy Society Seizure Prediction Challenge.
+\end{itemize}
+
+\section{Summary}\label{summary}
+
+This work presents the system proposed by Universidad CEU Cardenal
+Herrera (ESAI-CEU-UCH) at Kaggle American Epilepsy Society Seizure
+Prediction Challenge. The proposed system was positioned as \textbf{4th}
+at Kaggle American Epilepsy Society Seizure Prediction Challenge~\cite{kaggle}.
+
+Different kind of input features (different preprocessing pipelines) and
+different statistical models are being proposed. This diversity was motivated to
+improve model combination result.
+
+It is important to note that any of the proposed systems use test set
+for any calibration or related purpose. The competition allow to do this
+model calibration using test set, but doing it will reduce the
+reproducibility of the results in a real world implementation.
+
+\section{Feature selection and
+  extraction}\label{feature-selection-and-extraction}
+
+Several preprocessing pipelines has been performed, being the most
+important the FFT plus PCA step.
+
+\subsection{FFT features plus PCA/ICA}\label{fft-features-plus-pcaica}
+
+This is the most important kind of proposed features, obtaining the best
+standalone result. The process follow this steps for each input
+file~\cite{2014:howbert:plosone}:
+
+\begin{enumerate}
+\item
+  Extract windows of 60 seconds size with 50\% overlapping for every
+  channel in the data, increasing the number of samples in the data set.
+  We obtained 19 windows for every input file. Every sample is filtered
+  by using Hamming windows.
+\item
+  For every window, real FFT is computed using an algorithm which needs
+  power of two window sizes, so, 60s input windows are of 24\,000 for Dogs
+  and 300\,000 for Patients, leading into 16384 FFT bins for Dogs and
+  262144 FFT for Patients.
+\item A filter bank is computed for bands: delta (0.1Hz --- 4Hz), theta (4Hz ---
+  8Hz), alpha (8Hz --- 12Hz), beta (12Hz --- 30Hz), low-gamma (30Hz --- 70Hz),
+  high-gamma (70Hz --- 180Hz). The mean in the corresponding frequency bands has
+  been computed.
+\item
+  The output of the filter bank is compressed by computing the logarithm
+  of the values.
+\end{enumerate}
+
+For every file, it is computed a matrix with 19 rows (windows of 60s with 50\%
+overlapping) and $6C$ columns being $C$ the number of channels. This FFT
+transformation has been applied for all the available data, training and test.
+
+A PCA transformation has been computed over the concatenation by rows of
+all training data matrices, leaving test data hidden for this step. Data
+has been centered and scaled before PCA. After computing centers, scales
+and PCA matrix transformation, it has been applied to all the available
+data, training and test. In a similar fashion as for PCA, Indenpendent
+Component Analysis (ICA) has been performed. The advantage of PCA/ICA
+transformation is their ability to remove linear correlations between
+pairs of features.
+
+\subsection{Eigen values of pairwise channels correlation
+  matrix}\label{eigen-values-of-pairwise-channels-correlation-matrix}
+
+This preprocessing was based in previous competition system of Michael Hills~\cite{michaelhills}.
+
+\subsubsection{Windowed correlation
+  matrix}\label{windowed-correlation-matrix}
+
+\subsubsection{Global correlation
+  matrix}\label{global-correlation-matrix}
+
+\subsection{Global statistical
+  features}\label{global-statistical-features}
+
+\section{Modelling techniques and
+  training}\label{modelling-techniques-and-training}
+
+\subsection{Cross-validation
+  algorithm}\label{cross-validation-algorithm}
+
+\subsection{Models}\label{models}
+
+Different models has been tested. Logistic regression as initial
+baseline following a simple linear regression approach, which was not
+introduced in the final system. KNNs for a more sophisticated model. In
+order to exploit non-linear relations in data, dropout ANNs with
+different number of layers and ReLU as neurons. And finally, an ensemble
+of several models has been performed.
+
+\subsubsection{K-Nearest Neighbors}\label{k-nearest-neighbors}
+
+\subsubsection{Artificial Neural
+  Networks}\label{artificial-neural-networks}
+
+\subsubsection{Ensemble of models}\label{ensemble-of-models}
+
+All the proposed models have been trained independently, computing
+cross-validation probabilities for every training file, and test output
+submission file.
+
+Initially, a simple uniform linear combination of probability outputs in
+submission files has been tested. In order to improve this result, a Bayesian
+Model Combination (BMC) algorithm~\cite{2011:monteith:ijcnn} has been
+implemented in Lua for APRIL-ANN~\cite{aprilann} toolkit. BMC algorithm uses
+cross-validation output probabilities to optimize the combination weights, and
+uses these weights to combine output probabilities in submission files.
+
+\subsection{Results}\label{results}
+
+The best submitted model is the combination of the described models
+above. They achieve a \textbf{0.79335} AUC in private test.
+
+\section{Code description}\label{code-description}
+
+\section{Dependencies}\label{dependencies}
+
+\subsection{Software}\label{software}
+
+This system uses the following open source software:
+
+\begin{itemize}
+\item APRIL-ANN toolkit v0.4.0~\cite{aprilann}.
+  It is a toolkit for pattern recognition with Lua and C/C++ core.
+  Because this tool is very new, the installation and configuration has
+  been written in the pipeline.
+\item R project v3.0.2~\cite{Rproject}. For statistical
+  computing, a wide spread tool in Kaggle competitions. Packages
+  R.matlab, MASS, fda.usc, fastICA, stringr and plyr are necessary to
+  run the system.
+\end{itemize}
+
+The system is prepared to run in a Linux system with Ubuntu 14.04 LTS, but it
+can be run in other Debian based distributions, but not tested.
+
+\subsection{Hardware}\label{hardware}
+
+The minimum requirements for the correct execution of this software are:
+
+\begin{itemize}
+\item
+  6GB of RAM.
+\item
+  1.5GB of disk space.
+\end{itemize}
+
+\section{How to generate the
+  solution}\label{how-to-generate-the-solution}
+
+\section{Additional comments and
+  observations}\label{additional-comments-and-observations}
+
+Among the indicated as submitted best system, different models and
+features combinations has been tested. Table~\ref{tab:val} summarizes
+the cross-validation AUC and public test AUC for the most important
+combinations. In Table~\ref{tab:val} first column contains the model, being one
+of the following:
+
+\begin{itemize}
+\item
+  LR: Logistic regression.
+\item
+  KNN: K-Nearest-Neighbors with $K=40$.
+\item ANN: Artificial Neural Networks with 50\% dropout and
+  ReLU~\cite{2011:glorot:aistats} neurons, 128 units in every hidden layer, and
+  a logistic activation function at the output.  ANN2 for two hidden layers,
+  ANN2p for two hidden layers with 64 units in every layer, ANN3 for three
+  hidden layers, and so on.
+\item
+  UNIFORM or BMC: ensemble of the most promising systems, indicated in
+  bold face. UNIFORM is a linear combination with uniformly distributed
+  weights; BMC is linear combination where weights are estimated
+  following BMC optimizing cross-validation likelihood.
+\end{itemize}
+
+The second column indicates which features were used as input of the
+model, being one of the following list:
+
+\begin{itemize}
+\item
+  FFT: the output of the proposed filter bank plus logarithm
+  compression.
+\item
+  FFT+CORW: the previous one plus windowed eigen values of correlation
+  matrix.
+\item
+  PCA+CORW: the PCA transformation of FFT features plus windowed eigeb
+  values of correlation matrix.
+\item
+  ICA+CORW: idem as previos one, but using ICA instead of PCA.
+\item
+  CORG: correlation using 10 minutes window.
+\item
+  COVRED: different statistical measures over the original signal.
+\item
+  ENSEMBLE: output probabilities of the bold faced systems.
+\end{itemize}
+
+\begin{table}
+  \centering
+  \begin{tabular}{|l|r|rr|}
+    \hline
+    Model & Features & CV AUC & Pub. AUC\\
+    \hline
+    \hline
+    LR & FFT & 0.9337 & 0.6784\\
+    \hline
+    KNN & FFT & 0.8008 & 0.6759\\
+    KNN & FFT+CORW & 0.7994 & 0.7040\\
+    \textbf{KNN} & \textbf{PCA+CORW} & \textbf{0.8104} & \textbf{0.7288}\\
+    \textbf{KNN} & \textbf{ICA+CORW} & \textbf{0.8103} & \textbf{0.6840}\\
+    \hline
+    ANN2 & FFT+CORW & 0.9072 & 0.7489\\
+    ANN2 & PCA+CORW & 0.9082 & 0.7815\\
+    \textbf{ANN2p} & \textbf{PCA+CORW} & \textbf{0.9175} & \textbf{0.7895}\\
+    \textbf{ANN2} & \textbf{ICA+CORW} & \textbf{0.9104} & \textbf{0.7772}\\
+    ANN3 & PCA+CORW & 0.9188 & 0.7690\\
+    ANN4 & PCA+CORW & 0.9268 & 0.7772\\
+    \textbf{ANN5} & \textbf{PCA+CORW} & \textbf{0.9283} & \textbf{0.7937}\\
+    ANN6 & PCA+CORW & 0.9291 & 0.7722\\
+    \hline
+    \textbf{KNN} & \textbf{CORG} & \textbf{0.7097} & \textbf{0.6552}\\
+    \textbf{KNN} & \textbf{COVRED} & \textbf{0.6900} & \textbf{0.6901}\\
+    \hline
+    UNIFORM & ENSEMBLE & --- & 0.8048\\
+    BMC & ENSEMBLE & 0.9271 & 0.8249\\
+    \hline
+  \end{tabular}
+  \caption{Cross-validation and public AUC results for the most important systems tested during the competition.\label{tab:val}}
+\end{table}            
+
+Table~\ref{tab:val} shows that logistic regression model was the worst in
+terms of generalization abiltiy. The application of PCA allows to
+improve the public AUC results by \textbf{0.025} for KNN model and
+\textbf{0.033} for ANN model. ICA obtains improvements similar to PCA.
+The advantage of deep ANNs (with more than two hidden layers) is not
+clear, but the best public AUC was obtained by an ANN with five hidden
+layers, improving by \textbf{0.004} the public AUC of the best ANN2.
+Global features as CORG and COVRED show strong correlation between
+cross-validation AUC and public test AUC. Finally, the use of BMC
+ensemble method allow to improve the public AUC in \textbf{0.031} points
+compared to the ANN5 model.
+
+Finally, the private AUC for the two selected models is shown at
+Table~\ref{tab:private}.
+
+\begin{table}
+  \centering
+  \begin{tabular}{|l|r|r|}
+    \hline
+    Model & FEATURES & Priv. AUC\\
+    \hline
+    \hline
+    ANN5 & PCA+CORW & 0.7644\\
+    BMC & ENSEMBLE & 0.7935\\
+    \hline
+  \end{tabular}
+  \caption{Private AUC for the two selected submissions.\label{tab:private}}
+\end{table}
+
+The private AUC of the BMC ensemble is the second best if we compare it
+to all our submissions, however, the difference with the best private
+AUC is not significant, the best one has a private AUC of
+\textbf{0.7958}.
+
+The experimentation has been performed in a cluster of \textbf{three}
+computers with same hardware configuration:
+
+\begin{itemize}
+\item
+  Dell PowerEdge 210 II server rack.
+\item
+  Intel Xeon E3-1220 v2 at 3.10GHz with 16GB RAM (4 cores).
+\item
+  2.6TB of NFS storage.
+\end{itemize}
+
+\section{Simple features and methods}\label{simple-features-and-methods}
+
+The best single features plus model was ANN5, an artificial neural
+network with 5 hidden layers using ReLUs~\cite{2011:glorot:aistats}
+as activation function, with 128 neurons in every layer and logistic
+activation function as output. The input features were FFT+CORW as
+described above. This system achieves a \textbf{0.7644} AUC in the
+private test.
+
+\bibliography{refs}
+\bibliographystyle{plain}
+
+\end{document}
