@@ -37,10 +37,11 @@ for(subject in subjects) {
     for(f in files){
         dest.file <- paste(destinationPath,sub(".mat",".txt",f),sep="/")
         if(!file.exists(dest.file)) {
-            A <- readMat(paste(sources,subject,f,sep="/"))[[1]][,,1]$data
+            mat <- readMat(paste(sources,subject,f,sep="/"))[[1]]
+            A <- mat[,,1]$data
             nchannels <- nrow(A)
             nsamples <- ncol(A)
-            sampling.frequency <- readMat(paste(sources,subject,f,sep="/"))[[1]][,,1]$sampling.frequency
+            sampling.frequency <- mat[,,1]$sampling.frequency
             ws = floor(wsize * sampling.frequency)
             wa = floor(wadvance * sampling.frequency)
             eig <- matrix(nrow=0,ncol=nchannels)
