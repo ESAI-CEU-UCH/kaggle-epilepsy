@@ -67,8 +67,7 @@ if [[ -z $APRIL_EXEC || $APRIL_EXEC = "" || ! -e $APRIL_EXEC ]]; then
         if [[ ! -e v0.4.0.tar.gz ]]; then
             echo "Downloading APRIL-ANN tarball"
             wget https://github.com/pakozm/april-ann/archive/v0.4.0.tar.gz
-            md5sum --quiet -c $ROOT_PATH/scripts/v0.4.0.md5
-            err=$?
+            cd $ROOT_PATH && md5sum --quiet -c scripts/v0.4.0.md5 && cd $TMP_PATH
             if [[ $? -ne 0 ]]; then
                 echo "ERROR: Unable to check md5sum of downloaded APRIL-ANN tarball"
                 cleanup
@@ -119,3 +118,9 @@ trap - SIGINT
 
 echo "APRIL-ANN configured properly :-)"
 cd $ROOT_PATH
+
+##############################################################################
+
+echo "Configuring and installing R packages"
+
+Rscript scripts/configure.R

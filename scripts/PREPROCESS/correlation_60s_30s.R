@@ -24,7 +24,7 @@
 library(R.matlab)
 library(MASS)
 
-subjects <- strsplit(Sys.getenv("SUBJECTS"), " ")
+subjects <- c(unlist(strsplit(Sys.getenv("SUBJECTS"), " ")))
 sources <- Sys.getenv("DATA_PATH")
 destinationPath <- Sys.getenv("WINDOWED_COR_PATH")
 

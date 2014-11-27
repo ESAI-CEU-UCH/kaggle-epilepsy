@@ -25,7 +25,7 @@ library(plyr)
 
 readMatrix <- function(path) { read.table(path, header=F, sep=" ") }
 
-subjects <- strsplit(Sys.getenv("SUBJECTS"), " ")
+subjects <- c(unlist(strsplit(Sys.getenv("SUBJECTS"), " ")))
 sources <- Sys.getenv("FFT_PATH")
 dest <- Sys.getenv("PCA_TRANS_PATH")
 

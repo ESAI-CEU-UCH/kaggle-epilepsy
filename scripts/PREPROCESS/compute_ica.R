@@ -21,39 +21,35 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 # IN THE SOFTWARE.
 
-library(R.matlab)
-library(MASS)
-library(fda.usc)
 library(fastICA)
 library(stringr)
 
-subjects <- strsplit(Sys.getenv("SUBJECTS"), " ")
+subjects <- c(unlist(strsplit(Sys.getenv("SUBJECTS"), " ")))
 sources <- Sys.getenv("FFT_PATH")
 files <- dir(sources)
-destinationPath <- Sys.getenv("WINDOWED_COR_PATH")
+destinationPath <- Sys.getenv("FFT_ICA_PATH")
 
 getChannelNumber <- function(path) {
-    as.numeric(gsub("^.*channel_(..).*$", "\1", path))
+    as.numeric(gsub("^.*channel_(..).*$", "\\1", path))
 }
 
 processSet <- function(auxfiles, seg, ninter, nchannels, data, start) {
     for (i in 1:ninter){
         for (j in 1:nchannels){
-            path <- auxfiles[seg[(i-1)*nchannels+j]]
+            path <- paste(sources, auxfiles[seg[(i-1)*nchannels+j]], sep="/")
             chan <- getChannelNumber(path)
             tt <- read.table(path)
             data[i+start,,,chan] <- as.matrix(tt)
         }
     }
+    data
 }
 
-for (hh in 1:length(individuos)){
-    subject <- individuos[hh]
+for (hh in 1:length(subjects)){
+    subject <- subjects[hh]
     write(paste("#",subject), stdout())
     auxfiles <- files[grep(subject,files)]
 
-    nchannels;
-  
     seginter <- grep("interictal",auxfiles)
     segpre <- grep("preictal",auxfiles)
     segtest <- grep("test",auxfiles)
@@ -65,57 +61,46 @@ for (hh in 1:length(individuos)){
     npre <- length(segpre)/nchannels 
     ntest <- length(segtest)/nchannels
   
-    tt <- read.table(paste(auxfiles[seginter[1]],sep=""))  
+    tt <- read.table(paste(sources, auxfiles[seginter[1]], sep="/"))
     nfft <- dim(tt)[1]
     nfilt <- dim(tt)[2]
 
     # Read all training data
     data <- array(dim=c(ninter+npre,nfft,nfilt,nchannels))
     
-    processSet(auxfiles, seginter, ninter, nchannels, data, 0)
-    processSet(auxfiles, segpre, npre, nchannels, data, ninter)
-
+    data <- processSet(auxfiles, seginter, ninter, nchannels, data, 0)
+    data <- processSet(auxfiles, segpre, npre, nchannels, data, ninter)
+    
     # Read test data
-    datatest<-array(dim=c(ntest,nfft,nfilt,nchannels))
+    datatest <- array(dim=c(ntest,nfft,nfilt,nchannels))
 
-    processSet(auxfiles, segtest, ntest, nchannels, datatest, 0)
+    datatest <- processSet(auxfiles, segtest, ntest, nchannels, datatest, 0)
         
     # Decompose and align by minute all the data
     data1 <- (apply(apply(data,c(2,1),unlist),1,unlist))
     datatest1 <- (apply(apply(datatest,c(2,1),unlist),1,unlist))
 
     # Compute ICA and process test data
-    ica<-fastICA(data1,n.comp=dim(data1)[2],method="C")
-    testica<-scale(datatest1,center=TRUE,scale=FALSE)%*%ica$K%*%ica$W
+    ica <- fastICA(data1,n.comp=dim(data1)[2],method="C")
+    testica <- scale(datatest1,center=TRUE,scale=FALSE)%*%ica$K%*%ica$W
 
-
-
-
-
-
-    
-    fuentes <- "/home/experimentos/CORPORA/KAGGLE/EPILEPSY_PREDICTION/"
-    ficherosorig <- dir(paste(fuentes,subject,sep=""))
-    
-    dir.create(paste(getwd(),"/COVARICAtot/",subject,sep=""))
-    setwd(paste(getwd(),"/COVARICAtot/",subject,sep=""))
-    
     for(i in 1:ninter){
-        nombrefichero<-paste(substr(as.character(ficherosorig[i]),1,nchar(as.character(ficherosorig[i]))-4),"COVICAtot.txt",sep="")
-        write.table(ica$S[((i-1)*nfft+1):(i*nfft),],file =nombrefichero, sep = " ", col.names = FALSE, row.names = FALSE)
+        filename <- paste(destinationPath, "/",
+                          gsub(".channel_.*$", "", auxfiles[i]), ".txt", sep="")
+        write.table(ica$S[((i-1)*nfft+1):(i*nfft),],file =filename, sep = " ",
+                    col.names = FALSE, row.names = FALSE)
     }
     for (i in 1:npre){
-        nombrefichero<-paste(substr(as.character(ficherosorig[(ninter+i)]),1,nchar(as.character(ficherosorig[(ninter+i)]))-4),"COVICAtot.txt",sep="")
-        write.table(ica$S[((ninter+i-1)*nfft+1):((ninter+i)*nfft),],file =nombrefichero, sep = " ", col.names = FALSE, row.names = FALSE)
+        filename <- paste(destinationPath, "/",
+                          gsub(".channel_.*$", "", auxfiles[ninter + i]), ".txt", sep="")
+        write.table(ica$S[((ninter + i-1)*nfft+1):((ninter + i)*nfft),],file =filename, sep = " ",
+                    col.names = FALSE, row.names = FALSE)
     }
     
     for (i in 1:ntest){
-        nombrefichero<-paste(substr(as.character(ficherosorig[(ninter+npre+i)]),1,nchar(as.character(ficherosorig[(ninter+npre+i)]))-4),"COVICAtot.txt",sep="")
-        write.table(testica[((i-1)*nfft+1):(i*nfft),],file =nombrefichero, sep = " ", col.names = FALSE, row.names = FALSE)
+        filename <- paste(destinationPath, "/",
+                          gsub(".channel_.*$", "", auxfiles[ninter+npre+i]), ".txt", sep="")
+        write.table(testica[((i-1)*nfft+1):(i*nfft),],file =filename, sep = " ",
+                    col.names = FALSE, row.names = FALSE)
     }
-    
-    cat(paste("Fin individuo ",hh,sep=""))
-    
 }
-
-
