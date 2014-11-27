@@ -40,9 +40,9 @@ cleanup()
 ## FFT FEATURES ##
 ##################
 
-echo "Computing FFT features"
 # Avoid FFT computation if not needed
 if [[ ! -e $FFT_PATH ]]; then
+    echo "Computing FFT features"
     # Computes FFT features. Additionally it writes sequence numbers to
     # SEQUENCES_PATH.
     if ! $APRIL_EXEC scripts/PREPROCESS/compute_fft.lua $DATA_PATH $FFT_PATH $SEQUENCES_PATH; then
@@ -52,32 +52,27 @@ if [[ ! -e $FFT_PATH ]]; then
     fi
 fi
 
-# Sanity check for the number of FFT files
-N=$(find $FFT_PATH -name "*segment*csv.gz" | wc -l | awk '{print $1}')
-if [[ $N -ne $NUMBER_FFT_FILES ]]; then
-    echo "ERROR: Incorrect number of FFT files"
-    cleanup $FFT_PATH $SEQUENCES_PATH
-    exit 10
-fi
-
 ###############################
 ## WINDOWED CORRELATIONS EIG ##
 ###############################
 
-echo "Computing eigen values of windowed correlations matrix"
-mkdir -p $WINDOWED_COR_PATH
-if ! Rscript scripts/PREPROCESS/correlation_60s_30s.R; then
-    echo "ERROR: Unable to compute eigen values of correlations matrix"
-    cleanup $WINDOWED_COR_PATH
-    exit 10
+if [[ ! -e $WINDOWED_COR_PATH ]]; then
+    echo "Computing eigen values of windowed correlations matrix"
+    mkdir -p $WINDOWED_COR_PATH
+    if ! Rscript scripts/PREPROCESS/correlation_60s_30s.R; then
+        echo "Computing eigen values of windowed correlations matrix"
+        echo "ERROR: Unable to compute eigen values of correlations matrix"
+        cleanup $WINDOWED_COR_PATH
+        exit 10
+    fi
 fi
 
 ###########################
 ## PCA OVER FFT FEATURES ##
 ###########################
 
-echo "Computing PCA transformation of FFT features"
 if [[ ! -e $PCA_TRANS_PATH ]]; then
+    echo "Computing PCA transformation of FFT features"
     mkdir -p $PCA_TRANS_PATH
     if ! Rscript scripts/PREPROCESS/compute_pca.R; then
         echo "ERROR: Unable to compute PCA transformation"
@@ -86,8 +81,8 @@ if [[ ! -e $PCA_TRANS_PATH ]]; then
     fi
 fi
 
-echo "Applying PCA transformation to FFT features"
 if [[ ! -e $FFT_PCA_PATH ]]; then
+    echo "Applying PCA transformation to FFT features"
     mkdir -p $FFT_PCA_PATH
     if ! $APRIL_EXEC scripts/PREPROCESS/apply_pca.lua $FFT_PATH $PCA_TRANS_PATH $FFT_PCA_PATH; then
         echo "ERROR: Unable to apply PCA transformation to FFT data"
@@ -99,8 +94,8 @@ fi
 ## ICA OVER FFT FEATURES ##
 ###########################
 
-echo "Computing and applying ICA transformation of FFT features"
 if [[ ! -e $FFT_ICA_PATH ]]; then
+    echo "Computing and applying ICA transformation of FFT features"
     mkdir -p $FFT_ICA_PATH
     if ! Rscript scripts/PREPROCESS/compute_ica.R; then
         echo "ERROR: Unable to compute and apply ICA transformation"
