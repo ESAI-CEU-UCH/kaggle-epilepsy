@@ -94,12 +94,21 @@ fi
 ## ICA OVER FFT FEATURES ##
 ###########################
 
-if [[ ! -e $FFT_ICA_PATH ]]; then
-    echo "Computing and applying ICA transformation of FFT features"
-    mkdir -p $FFT_ICA_PATH
+if [[ ! -e $ICA_TRANS_PATH ]]; then
+    echo "Computing ICA transformation of FFT features"
+    mkdir -p $ICA_TRANS_PATH
     if ! Rscript scripts/PREPROCESS/compute_ica.R; then
-        echo "ERROR: Unable to compute and apply ICA transformation"
-        cleanup $FFT_ICA_PATH
+        echo "ERROR: Unable to compute ICA transformation"
+        cleanup $ICA_TRANS_PATH
         exit 10
+    fi
+fi
+
+if [[ ! -e $FFT_ICA_PATH ]]; then
+    echo "Applying ICA transformation to FFT features"
+    mkdir -p $FFT_ICA_PATH
+    if ! $APRIL_EXEC scripts/PREPROCESS/apply_ica.lua $FFT_PATH $ICA_TRANS_PATH $FFT_ICA_PATH; then
+        echo "ERROR: Unable to apply ICA transformation to FFT data"
+        cleanup $FFT_ICA_PATH
     fi
 fi

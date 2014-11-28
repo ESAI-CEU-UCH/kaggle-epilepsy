@@ -24,22 +24,24 @@
 library(fastICA)
 library(stringr)
 
+SEED <- 847236
 subjects <- c(unlist(strsplit(Sys.getenv("SUBJECTS"), " ")))
 sources <- Sys.getenv("FFT_PATH")
 files <- dir(sources)
-destinationPath <- Sys.getenv("FFT_ICA_PATH")
+dest <- Sys.getenv("ICA_TRANS_PATH")
 
 getChannelNumber <- function(path) {
     as.numeric(gsub("^.*channel_(..).*$", "\\1", path))
 }
 
-processSet <- function(auxfiles, seg, ninter, nchannels, data, start) {
-    for (i in 1:ninter){
+readSet <- function(auxfiles, seg, nlen, nfft, nfilt, nchannels) {
+    data <- array(dim=c(nlen,nfft,nfilt,nchannels))
+    for (i in 1:nlen){
         for (j in 1:nchannels){
             path <- paste(sources, auxfiles[seg[(i-1)*nchannels+j]], sep="/")
             chan <- getChannelNumber(path)
             tt <- read.table(path)
-            data[i+start,,,chan] <- as.matrix(tt)
+            data[i,,,chan] <- as.matrix(tt)
         }
     }
     data
@@ -50,57 +52,41 @@ for (hh in 1:length(subjects)){
     write(paste("#",subject), stdout())
     auxfiles <- files[grep(subject,files)]
 
-    seginter <- grep("interictal",auxfiles)
-    segpre <- grep("preictal",auxfiles)
-    segtest <- grep("test",auxfiles)
-
-    nchannels <- length(seginter) / length(grep("channel_01",
-                                                auxfiles[seginter]))
+    trseg <- grep("ictal",auxfiles)
     
-    ninter <- length(seginter)/nchannels 
-    npre <- length(segpre)/nchannels 
-    ntest <- length(segtest)/nchannels
-  
-    tt <- read.table(paste(sources, auxfiles[seginter[1]], sep="/"))
+    nchannels <- length(trseg) / length(grep("channel_01",
+                                             auxfiles[trseg]))
+    
+    ntraining <- length(trseg)/nchannels 
+    
+    tt <- read.table(paste(sources, auxfiles[trseg[1]], sep="/"))
     nfft <- dim(tt)[1]
     nfilt <- dim(tt)[2]
-
+    
     # Read all training data
-    data <- array(dim=c(ninter+npre,nfft,nfilt,nchannels))
+    data <- readSet(auxfiles, trseg, ntraining, nfft, nfilt, nchannels)
     
-    data <- processSet(auxfiles, seginter, ninter, nchannels, data, 0)
-    data <- processSet(auxfiles, segpre, npre, nchannels, data, ninter)
-    
-    # Read test data
-    datatest <- array(dim=c(ntest,nfft,nfilt,nchannels))
-
-    datatest <- processSet(auxfiles, segtest, ntest, nchannels, datatest, 0)
-        
     # Decompose and align by minute all the data
     data1 <- (apply(apply(data,c(2,1),unlist),1,unlist))
-    datatest1 <- (apply(apply(datatest,c(2,1),unlist),1,unlist))
 
-    # Compute ICA and process test data
-    ica <- fastICA(data1,n.comp=dim(data1)[2],method="C")
-    testica <- scale(datatest1,center=TRUE,scale=FALSE)%*%ica$K%*%ica$W
-
-    for(i in 1:ninter){
-        filename <- paste(destinationPath, "/",
-                          gsub(".channel_.*$", "", auxfiles[i]), ".txt", sep="")
-        write.table(ica$S[((i-1)*nfft+1):(i*nfft),],file =filename, sep = " ",
-                    col.names = FALSE, row.names = FALSE)
-    }
-    for (i in 1:npre){
-        filename <- paste(destinationPath, "/",
-                          gsub(".channel_.*$", "", auxfiles[ninter + i]), ".txt", sep="")
-        write.table(ica$S[((ninter + i-1)*nfft+1):((ninter + i)*nfft),],file =filename, sep = " ",
-                    col.names = FALSE, row.names = FALSE)
-    }
+    # Compute centers
+    center <- colMeans(data1)
     
-    for (i in 1:ntest){
-        filename <- paste(destinationPath, "/",
-                          gsub(".channel_.*$", "", auxfiles[ninter+npre+i]), ".txt", sep="")
-        write.table(testica[((i-1)*nfft+1):(i*nfft),],file =filename, sep = " ",
-                    col.names = FALSE, row.names = FALSE)
-    }
+    # Compute ICA
+    set.seed(SEED)
+    ica <- fastICA(data1,n.comp=dim(data1)[2],method="C")
+
+    # testica <- scale(datatest1,center=center,scale=FALSE)%*%ica$K%*%ica$W
+
+    # Write transformation matrices
+    output.center <- paste(dest, "/", subject, "_ica_center.txt", sep="")
+    output.K <- paste(dest, "/", subject, "_ica_K.txt", sep="")
+    output.W <- paste(dest, "/", subject, "_ica_W.txt", sep="")
+
+    write.table(center, file = output.center,
+                sep = " ", col.names = FALSE, row.names = FALSE)
+    write.table(ica$K, file = output.K,
+                sep = " ", col.names = FALSE, row.names = FALSE)
+    write.table(ica$W, file = output.W,
+                sep = " ", col.names = FALSE, row.names = FALSE)
 }
