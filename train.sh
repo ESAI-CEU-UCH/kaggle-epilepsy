@@ -62,7 +62,7 @@ train()
     trap "control_c $RESULT" SIGINT
     #
     mkdir -p $RESULT
-    echo clip,preictal > $RESULT.txt
+    echo clip,preictal > $RESULT/test.txt
     echo "Training with script= $SCRIPT   conf= $CONF   result= $RESULT"
     echo "IT CAN TAKE SEVERAL HOURS, PLEASE WAIT"
     if [[ $VERBOSE_TRAIN == 0 ]]; then
