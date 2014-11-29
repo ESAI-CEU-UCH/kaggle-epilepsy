@@ -1,5 +1,3 @@
-local result_path = assert(os.getenv("ANN5_PCA_CORW_RESULT"),
-                           "Needs execution of . settings.sh")
 return {
   min=100,  -- minimum number of epochs
   max=400,  -- maximum number of epochs
@@ -22,8 +20,6 @@ return {
   dropout=0.5, -- dropout probability
   context=1,   -- context size
   no_channels, -- input is not split into channels
-  test=result_path + "/test.txt", -- test output
-  prefix=result_path, -- model training output
   -- random seeds
   wseed=1234,
   sseed=5678,

@@ -41,7 +41,6 @@ cleanup()
     cd $ROOT_PATH
     rm -Rf $TMP_PATH/$APRILANN
     md5sum --quiet -c $ROOT_PATH/scripts/v0.4.0.md5
-    err=$?
     if [[ $? -ne 0 ]]; then
         rm -f $TMP_PATH/v$VERSION.tar.gz
     fi
@@ -54,7 +53,7 @@ control_c()
     cleanup
     exit 10
 }
- 
+
 # trap keyboard interrupt (control-c)
 trap control_c SIGINT
 
