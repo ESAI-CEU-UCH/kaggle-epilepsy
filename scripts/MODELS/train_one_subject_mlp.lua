@@ -66,7 +66,7 @@ local all_train_data,list_names = common.load_data(params.fft, "*ictal*", params
 -- compute training standarization
 local means,devs = common.compute_means_devs(all_train_data.input_dataset)
 -- write standarization to output prefix
-util.serialize({means,devs}, "%s/standarization.lua"%{PREFIX})
+util.serialize({means,devs}, "%s/%s_standarization.lua"%{PREFIX,SUBJECT})
 -- apply standarization to training data
 all_train_data.input_dataset = common.apply_std(all_train_data.input_dataset,
                                                 means, devs)
