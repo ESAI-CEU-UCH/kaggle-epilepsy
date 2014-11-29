@@ -261,8 +261,6 @@ function common.train_with_crossvalidation(list_names, all_train_data, params,
     -- accumulate for subject ROC curve
     roc_curve:add(out2,tgt2)
     table.insert(val_results, {out2,tgt2})
-    -- append validation result
-    local a0,a1,v0,v1 = common.append(params.append, out2, tgt2)
     -- verbose output
     if params.save_activations then
       assert( os.execute("mkdir -p %s"%{params.save_activations}) )
@@ -285,12 +283,11 @@ function common.train_with_crossvalidation(list_names, all_train_data, params,
     io.stdout:flush()
     P=P+1
   end
-  -- roc_curve:compute_curve():toTabFilename("curve.txt")
   local outm = matrix.join(1,iterator(val_results):field(1):table())
   local tgtm = matrix.join(1,iterator(val_results):field(2):table())
   local val_result = matrix.join(2,outm,tgtm)
-  val_result:toTabFilename("%svalidation_%s.txt"%{params.PREFIX,params.SUBJECT})
-  return {roc_curve:compute_area()},{mv:compute()}
+  val_result:toTabFilename("%s/validation_%s.txt"%{params.PREFIX,params.SUBJECT})
+  return {roc_curve:compute_area()},{mv:compute()},val_result
 end
 
 ------------------------------------------------------------------------------
@@ -433,12 +430,15 @@ local function protected_call(func, error_msg, ...)
   return table.pack(result)
 end
 
--- loads a list of filenames to train
-function common.load_data(list,params)
-  print("# LOADING", list)
-  -- true if features doesn't are segmented into channels
+-- Loads a list of filenames from a given path using the indicated mask and
+-- the params.subject parameter. The function returns input_dataset and
+-- output_dataset if labels are available in the filenames (no test), and
+-- the list of loaded filenames.
+function common.load_data(path,mask,params)
+  print("# LOADING", path, params.SUBJECT, mask)
+  -- true if features don't are segmented into channels
   local no_channels = params.no_channels
-  local num_channels = params.channels
+  local num_channels
   -- context size (the time slice window is c+1+c)
   local context = params.context
   -- a list of input matrices
@@ -448,13 +448,17 @@ function common.load_data(list,params)
   -- a list with all filenames
   local list_names = {}
   local ncols,nrows -- for sanity check
-  -- for every filename path in the given list
-  for path in io.lines(list) do
-    table.insert(list_names, path:basename())
+  local subject_mask = "%s%s"%{params.SUBJECT,mask}
+  if not no_channels then
+    subject_mask = subject_mask .. "channel_01*"
+  end
+  local cmd = "find %s -name %s | sort"%{path,subject_mask}
+  for filename in iterator(io.popen(cmd):lines()) do
+    local basename = filename:basename():gsub(".channel.*$",""):gsub(".txt","")
+    table.insert(list_names, basename)
     local input
     local mat_tbl = {}
-    if no_channels then -- load a matrix without channels splitted
-      local filename = "%s.txt"%{path}
+    if no_channels then -- load a matrix without channel splits
       local f = april_assert(io.open(filename), "Unable to open %s", filename)
       protected_call(function()
           mat_tbl[#mat_tbl + 1] = matrix.read(f,
@@ -468,8 +472,10 @@ function common.load_data(list,params)
       assert(#mat_tbl == 1)
       input = mat_tbl[#mat_tbl]
     else -- load a matrix splitted into different channel filenames
-      for j=1,num_channels do
-        local filename = "%s.channel_%02d.csv.gz"%{path,j}
+      local list = glob(filename:gsub("channel_..", "channel_??"))
+      num_channels = num_channels or #list
+      assert(num_channels == #list, "Incorrect number of channels")
+      for _,filename in ipairs(list) do
         local f = april_assert(io.open(filename), "Unable to open %s", filename)
         protected_call(function()
             mat_tbl[#mat_tbl + 1] = matrix.read(f,
@@ -503,16 +509,17 @@ function common.load_data(list,params)
   -- build a dataset with all the input matrix
   local in_ds = dataset.matrix(input_mat)
   if params.cor then
-    -- if correlation features are available, load then recursively
-    local cors = common.load_data(params.cor,{ list = params.cor,
-                                               no_channels = true })
+    -- if correlation features are available, load them recursively
+    local cors = common.load_data(params.cor, mask, { no_channels = true,
+                                                      SUBJECT = params.SUBJECT })
     assert(in_ds:numPatterns() == cors.input_dataset:numPatterns())
     -- join both set of features
     in_ds = dataset.join{ in_ds, cors.input_dataset }
   end
   if context then
-    -- BUG: we are building contextualized model which mixes the limits of the
-    -- original files
+    -- BUG: we are building contextualized input which mixes the rows in
+    -- boundaries of the matrices, it is not an important BUG, but some noise
+    -- may be introduced into training.
     in_ds = dataset.contextualizer(in_ds, context, context)
   end
   -- return a table with input and output datasets, and the list of loaded
@@ -576,8 +583,8 @@ function common.save_test(output, names, ds, params, classify, ...)
   local f = assert(io.open(output, "a"))
   local ds = dataset.token.wrapper(ds)
   -- auxiliar output file (for system combination)
-  local g = assert(io.open("%svalidation_%s.test.txt"%{params.PREFIX,
-                                                       params.SUBJECT}, "w"))
+  local g = assert(io.open("%s/validation_%s.test.txt"%{params.PREFIX,
+                                                        params.SUBJECT}, "w"))
   -- for every possible file
   for pat,indices in trainable.dataset_multiple_iterator{ bunch_size = nrows,
                                                           datasets = { ds }, } do
@@ -607,28 +614,6 @@ function common.save_test(output, names, ds, params, classify, ...)
   g:close()
 end
 
--- Append into a file the validation prediction and target matrices.
-function common.append(where, output, tgt)
-  assert(output:dim(1) == tgt:dim(1))
-  assert(#output:dim() == 2)
-  assert(#output:dim() == #tgt:dim())
-  if where then
-    local m
-    m = matrix.join(2, output, tgt)
-    local f = io.open(where, "a")
-    m:write(f, { tab=true })
-    f:close()
-  end
-  -- compute mean of positive and negative samples (for convergence check)
-  local mv0,mv1 = stats.mean_var(),stats.mean_var()
-  output:map(tgt, function(x,y) if y>0 then mv1:add(x) else mv0:add(x) end end)
-  local a0,v0 = mv0:compute()
-  local a1,v1 = mv1:compute()
-  print("# A0: ", a0, v0)
-  print("# A1: ", a1, v1)
-  return a0,a1,v0,v1
-end
-
 -- returns properties of the given loss function name: log_scale, smooth,
 -- loss_param table
 function common.loss_stuff(loss)
@@ -646,7 +631,7 @@ function common.loss_stuff(loss)
   return log_scale,smooth,loss_param
 end
 
-function common.build_mlp_extractor_EM(params)
+function common.build_mlp_extractor(params)
   local isize = params.input
   local the_net = ann.components.stack():push( ann.components.flatten() )
   for i,hsize in ipairs( params.layers ) do
