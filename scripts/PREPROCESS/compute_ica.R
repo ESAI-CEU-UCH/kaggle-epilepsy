@@ -24,7 +24,7 @@
 library(fastICA)
 library(stringr)
 
-SEED <- 847236
+SEED <- 37442
 subjects <- c(unlist(strsplit(Sys.getenv("SUBJECTS"), " ")))
 sources <- Sys.getenv("FFT_PATH")
 files <- dir(sources)
