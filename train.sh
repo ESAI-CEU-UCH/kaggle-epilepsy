@@ -27,6 +27,8 @@
 . scripts/configure.sh
 
 ANN5_PCA_CORW_CONF=scripts/MODELS/confs/ann5_pca_corw.lua
+ANN2_ICA_CORW_CONF=scripts/MODELS/confs/ann2_ica_corw.lua
+ANN2P_PCA_CORW_CONF=scripts/MODELS/confs/ann2p_pca_corw.lua
 TRAIN_ALL_SCRIPT=scripts/MODELS/train_all_subjects_wrapper.lua
 MLP_TRAIN_SCRIPT=scripts/MODELS/train_one_subject_mlp.lua
 KNN_TRAIN_SCRIPT=scripts/MODELS/train_one_subject_knn.lua
@@ -112,6 +114,17 @@ fi
 if [[ ! -e $ANN2P_PCA_CORW_RESULT ]]; then
     if ! train_mlp_pca $ANN2P_PCA_CORW_CONF $ANN2P_PCA_CORW_RESULT; then
         cleanup $ANN2P_PCA_CORW_RESULT
+	exit 10
+    fi
+fi
+
+###################
+## ANN2 ICA+CORW ##
+###################
+
+if [[ ! -e $ANN2_ICA_CORW_RESULT ]]; then
+    if ! train_mlp_pca $ANN2_ICA_CORW_CONF $ANN2_ICA_CORW_RESULT; then
+        cleanup $ANN2_ICA_CORW_RESULT
 	exit 10
     fi
 fi
