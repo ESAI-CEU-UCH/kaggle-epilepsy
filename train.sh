@@ -50,27 +50,45 @@ control_c()
     exit 10
 }
 
-train_mlp()
+train()
 {
-    CONF=$1
-    RESULT=$2
+    SCRIPT=$1
+    CONF=$2
+    RESULT=$3
+    ARGS=$4
     # trap keyboard interrupt (control-c)
-    trap 'control_c $RESULT' SIGINT
+    trap "control_c $RESULT" SIGINT
     #
     mkdir -p $RESULT
-    $APRIL_EXEC $TRAIN_ALL_SCRIPT $MLP_TRAIN_SCRIPT -f $CONF \
-        --fft=$FFT_PCA_PATH --cor=$WINDOWED_COR_PATH \
-        --test=$RESULT/test.txt \
-        --prefix=$RESULT > $RESULT/train.out 2> $RESULT/train.err    
-    err=$?
+    echo "Training with script= $SCRIPT   conf= $CONF   result= $RESULT"
+    echo "IT CAN TAKE SEVERAL HOURS, PLEASE WAIT"
+    if [[ $VERBOSE_TRAIN == 0 ]]; then
+	$APRIL_EXEC $TRAIN_ALL_SCRIPT $SCRIPT -f $CONF $ARGS \
+            --test=$RESULT/test.txt \
+            --prefix=$RESULT > $RESULT/train.out
+	err=$?
+    else
+	$APRIL_EXEC $TRAIN_ALL_SCRIPT $MLP_TRAIN_SCRIPT -f $CONF $ARGS \
+	    
+            --fft=$FFT_PCA_PATH --cor=$WINDOWED_COR_PATH \
+            --test=$RESULT/test.txt \
+            --prefix=$RESULT | tee $RESULT/train.out
+	err=$?
+    fi
     # removes keyboard interrupt trap (control-c)
     trap - SIGINT
-    return $err
+    return $err    
+}
+
+train_mlp_pca()
+{
+    train $MLP_TRAIN_SCRIPT $1 $2 "--fft=$FFT_PCA_PATH --cor=$WINDOWED_COR_PATH"
+    return $?
 }
 
 ###############################################################################
 
-if [[ \( ! -e $FFT_PCA_PATH \) || \( ! -e $FFT_ICA_PATH \) || \( ! -e $WINDOWED_COR_PATH \) ]]; then
+if [[ ( ! -e $FFT_PCA_PATH ) || ( ! -e $FFT_ICA_PATH ) || ( ! -e $WINDOWED_COR_PATH ) ]]; then
     if ! ./preprocess.sh; then
         exit 10
     fi
@@ -81,8 +99,9 @@ fi
 ###################
 
 if [[ ! -e $ANN5_PCA_CORW_RESULT ]]; then
-    if ! train_mlp $ANN5_PCA_CORW_CONF $ANN5_PCA_CORW_RESULT; then
+    if ! train_mlp_pca $ANN5_PCA_CORW_CONF $ANN5_PCA_CORW_RESULT; then
         cleanup $ANN5_PCA_CORW_RESULT
+	exit 10
     fi
 fi
 
@@ -91,7 +110,8 @@ fi
 ####################
 
 if [[ ! -e $ANN2P_PCA_CORW_RESULT ]]; then
-    if ! train_mlp $ANN2P_PCA_CORW_CONF $ANN2P_PCA_CORW_RESULT; then
+    if ! train_mlp_pca $ANN2P_PCA_CORW_CONF $ANN2P_PCA_CORW_RESULT; then
         cleanup $ANN2P_PCA_CORW_RESULT
+	exit 10
     fi
 fi

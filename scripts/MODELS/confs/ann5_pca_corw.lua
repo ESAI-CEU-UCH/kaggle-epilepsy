@@ -8,9 +8,9 @@ return {
   mt=0.1,   -- momentum
   decay=0.001, -- learning decay
   mnp=600,     -- max-norm-penalty
-  combine=gmean, -- type of probability combination
+  combine="gmean", -- type of probability combination
   var=0.04,   -- variance of input Gaussian noise perturbation
-  actf=relu,  -- activation function
+  actf="relu",  -- activation function
   h1=128,      -- first layer size
   h2=128,      -- second layer size
   h3=128,      -- third layer size
@@ -19,7 +19,7 @@ return {
   bsize=128,  -- bunch size (mini-batch)
   dropout=0.5, -- dropout probability
   context=1,   -- context size
-  no_channels, -- input is not split into channels
+  no_channels=true, -- input is not split into channels
   -- random seeds
   wseed=1234,
   sseed=5678,

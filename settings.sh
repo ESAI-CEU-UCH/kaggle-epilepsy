@@ -2,8 +2,8 @@
 export DATA_PATH=DATA
 # Intermediate results path
 export TMP_PATH=TMP
-# Number of threads available, change it in the way you need
-export OMP_NUM_THREADS=4
+# Change this if you want verbose output during training
+export VERBOSE_TRAIN=0
 # The following parameters are fore intermediate results
 export SUBJECTS=$(find $DATA_PATH/ -mindepth 1 -maxdepth 1 -type d -exec basename {} ";" | sort | tr '\n' ' ')
 export ROOT_PATH=$(pwd)
@@ -24,3 +24,6 @@ export KNN_PCA_CORW_RESULT=$TMP_PATH/KNN_PCA_CORW_RESULT/
 export KNN_ICA_CORW_RESULT=$TMP_PATH/KNN_ICA_CORW_RESULT/
 export KNN_CORG_RESULT=$TMP_PATH/KNN_CORG_RESULT/
 export KNN_COVRED_RESULT=$TMP_PATH/KNN_COVRED_RESULT/
+# Number of threads available, change it in the way you need (only
+# useful if you have MKL installed, or specific ATLAS library)
+export OMP_NUM_THREADS=4

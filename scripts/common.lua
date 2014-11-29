@@ -420,14 +420,13 @@ local function get_label_of(basename)
 end
 
 local function protected_call(func, error_msg, ...)
-  local result = table.pack(xpcall(func(...),
-                                   debug.traceback))
-  local ok = table.remove(result,1)
-  if not ok then
-    print(result[1])
-    error(error_msg)
-  end
-  return table.pack(result)
+  return func(...)
+  -- local result = table.pack(xpcall(func(...), debug.traceback))
+  -- local ok = table.remove(result,1)
+  -- if not ok then
+  --   error(result[1] .. "\n" .. error_msg)
+  -- end
+  -- return table.pack(result)
 end
 
 -- Loads a list of filenames from a given path using the indicated mask and
@@ -493,7 +492,7 @@ function common.load_data(path,mask,params)
     -- sanity check
     assert(input:dim(1) == nrows)
     assert(input:dim(2) == ncols * #mat_tbl)
-    local label = get_label_of(path)
+    local label = get_label_of(filename)
     -- annotate the input matrix
     table.insert(input_mat_tbl, input)
     if label then
