@@ -1,29 +1,50 @@
+--[[
+  This file is part of ESAI-CEU-UCH/kaggle-epilepsy (https://github.com/ESAI-CEU-UCH/kaggle-epilepsy)
+  
+  Copyright (c) 2014, ESAI, Universidad CEU Cardenal Herrera,
+  (F. Zamora-Martínez, F. Muñoz-Malmaraz, P. Botella-Rocamora, J. Pardo)
+  
+  Permission is hereby granted, free of charge, to any person obtaining a copy
+  of this software and associated documentation files (the "Software"), to deal
+  in the Software without restriction, including without limitation the rights
+  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+  copies of the Software, and to permit persons to whom the Software is
+  furnished to do so, subject to the following conditions:
+  
+  The above copyright notice and this permission notice shall be included in all
+  copies or substantial portions of the Software.
+  
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+  IN THE SOFTWARE.
+]]
+package.path = package.path .. ";./scripts/?.lua"
+-- library loading and name import
+local common = require "common"
+--
 local rnd = random(12384)
-local log_scale = false
-local norm = false
 local NaN = mathcore.limits.float.quiet_NaN()
 local data = {}
 local SAMPLES = 2000 --500
-local SUBJECTS = { "Dog_1", "Dog_2", "Dog_3", "Dog_4", "Dog_5",
-                   "Patient_1", "Patient_2" }
+local SUBJECTS = common.SUBJECTS
+-- the ensemble output is stored in this table
 local result_test = { {'clip','preictal'} }
-
-local mode = "linear" -- table.remove(arg,1)
-assert(mode == "logistic" or mode == "linear" or mode == "mlp" or mode == "geom",
-       "Needs 'geom', 'logistic', 'linear' or 'mlp' mode as first argument")
-
+--
 local function normalize(w)
   for _,row in matrix.ext.iterate(w,1) do row:abs():scal( 1/row:sum() ) end
 end
-
+--
 local averaged_AUC = 0
 local total = 0
--- for each subject do
+--
 for _,subject in ipairs(SUBJECTS) do
-  -- print("#",subject)
   collectgarbage("collect")
   local models = {}
-  -- for each model output
+  -- load each model outputs
   local N
   for i,path in ipairs(arg) do
     models[i] = {
@@ -40,16 +61,15 @@ for _,subject in ipairs(SUBJECTS) do
   map(function(x) return dataset.matrix(x:select(2,1):clone()) end):table()
   local in_ds = dataset.join(in_ds_tbl)
   local out_ds = dataset.matrix(models[1].val:select(2,2):clone())
-  -- AUTODIFF
+  -- AUTODIFF build a simple linear combination model
   local shared = { w1 = matrix(1, #models) }
   local log, T, M = autodiff.op.log, autodiff.op.transpose, autodiff.matrix
   local i,w1 = M("i w1")
   local f = log( i * T( w1 ) )
+  -- build a neural network wrapper by using previous model
   local net = autodiff.ann.model(f, i, { w1 }, shared, #models, 1)
   -- LOSS
   local loss = ann.loss.cross_entropy()
-  log_scale = true
-  norm = false
   local bsize = N
   local trainer = trainable.supervised_trainer(net, loss, bsize)
   ---------------- BMC -----------------------------------------------------
@@ -63,9 +83,10 @@ for _,subject in ipairs(SUBJECTS) do
     -- sample from uniform dirichlet
     for j=1,#models do w1[{1,j}] = -math.log(rnd:rand()) end
     normalize(w1)
-    -- log-likelyhood
+    -- loss
     local loss = trainer:validate_dataset{ input_dataset = in_ds,
                                            output_dataset = out_ds }
+    -- log-likelihood
     local loglh = -in_ds:numPatterns() * loss
     if loglh > z then -- for numerical stability
       wr:scal( math.exp(z - loglh) )
@@ -80,26 +101,17 @@ for _,subject in ipairs(SUBJECTS) do
   ---------------------------------------------------------------------
   ---------------------------------------------------------------------
   ---------------------------------------------------------------------
-  -- print(pocket:get_state_string())
-  --
   local val_input = in_ds:toMatrix()
   local val_output = trainer:calculate(val_input)
   local val_target = out_ds:toMatrix()
-  -- print("LOSS=", loss:compute_loss(val_output,val_target),
-  --       iterator.range(val_input:dim(2)):
-  --         map(function(i)
-  --             local val = val_input(':',i):clone()
-  --             if log_scale then val:log() end
-  --             return ( loss:compute_loss(val,val_target) )
-  --         end):concat(" "))
   --
-  if log_scale then val_output:exp() end
+  val_output:exp()
   local auc = metrics.roc(val_output, val_target):compute_area()
-  print("# %20s"%{subject}, "AUC=",auc,
-        iterator.range(val_input:dim(2)):
-          map(function(i)
-              return ( metrics.roc(val_input(':',i), val_target):compute_area() )
-          end):concat(" "))
+  fprintf(io.stderr,"# %20s  AUC=%.6f  %s\n", subject,auc,
+          iterator.range(val_input:dim(2)):
+            map(function(i)
+                return ( metrics.roc(val_input(':',i), val_target):compute_area() )
+            end):concat(" "))
   --
   local test_m_tbl = iterator(models):
     map(function(x)
@@ -107,37 +119,15 @@ for _,subject in ipairs(SUBJECTS) do
     end):table()
   local test_m = matrix.join(2, test_m_tbl)
   test_output = trainer:calculate(test_m)
-  if log_scale then test_output:exp() end
-  -- print(matrix.join(2, test_output, test_m))
-  -- print(test_m)
-  -- print(test_output)
+  test_output:exp()
   for i=1,#models[1].test do
     table.insert(result_test, { models[1].test[i][1], test_output:get(i,1) })
   end
   --
   averaged_AUC = averaged_AUC + auc*test_output:size()
   total = total + test_output:size()
-  print("#\t\t\t\t\t\t", table.concat(trainer:weights("w1"):toTable(), " "))
-  -- print( matrix.op.exp( trainer:weights("w1") ) / matrix.op.exp( trainer:weights("w1") ):sum() )
-  
-  -- if true and ( mode == "geom" or mode == "linear" ) and subject == "Dog_2" then
-  --   local w1 = trainer:weights("w1")
-  --   for a=-10.0, 10.0, 0.4 do
-  --     w1:set(1,1,a)
-  --     for b=-10.0, 10.0, 0.4 do
-  --       --local b = 1.0 - a
-  --       w1:set(1,2,b)
-  --       local loss = trainer:validate_dataset{ input_dataset = in_ds,
-  --                                              output_dataset = out_ds } + trainer:get_option("weight_decay") * w1:dot(w1) * 0.5
-  --       print("LOSS", a, b, loss)
-  --     end
-  --   end
-  --   os.exit()
-  -- end
-
+  fprintf(io.stderr, "#\t\t\t\t\t\t %s\n",
+          table.concat(trainer:weights("w1"):toTable(), " "))
 end
-
-print("# AVERAGED AUC =", averaged_AUC/total)
-
-fprintf(io.stderr, iterator(result_test):map(table.unpack):concat(",","\n") )
-fprintf(io.stderr, "\n")
+fprintf(io.stderr,"# AVERAGED AUC = %.6f\n", averaged_AUC/total)
+print(iterator(result_test):map(table.unpack):concat(",","\n"))
