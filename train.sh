@@ -65,7 +65,7 @@ train()
     #
     mkdir -p $RESULT
     echo clip,preictal > $RESULT/test.txt
-    echo "Training with script= $SCRIPT   conf= $CONF   result= $RESULT   args= $ARGS"
+    echo "Training with script= $SCRIPT   conf= $CONF   result= $RESULT   args= \"$ARGS\""
     echo "IT CAN TAKE SEVERAL HOURS, PLEASE WAIT"
     if [[ $VERBOSE_TRAIN == 0 ]]; then
 	$APRIL_EXEC $TRAIN_ALL_SCRIPT $SCRIPT -f $CONF $ARGS \
