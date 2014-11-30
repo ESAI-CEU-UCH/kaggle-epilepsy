@@ -63,7 +63,7 @@ train()
     #
     mkdir -p $RESULT
     echo clip,preictal > $RESULT/test.txt
-    echo "Training with script= $SCRIPT   conf= $CONF   result= $RESULT"
+    echo "Training with script= $SCRIPT   conf= $CONF   result= $RESULT   args= $ARGS"
     echo "IT CAN TAKE SEVERAL HOURS, PLEASE WAIT"
     if [[ $VERBOSE_TRAIN == 0 ]]; then
 	$APRIL_EXEC $TRAIN_ALL_SCRIPT $SCRIPT -f $CONF $ARGS \
@@ -86,6 +86,12 @@ train()
 train_mlp_pca()
 {
     train $MLP_TRAIN_SCRIPT $1 $2 "--fft=$FFT_PCA_PATH --cor=$WINDOWED_COR_PATH"
+    return $?
+}
+
+train_mlp_ica()
+{
+    train $MLP_TRAIN_SCRIPT $1 $2 "--fft=$FFT_ICA_PATH --cor=$WINDOWED_COR_PATH"
     return $?
 }
 
@@ -124,7 +130,7 @@ fi
 ###################
 
 if [[ ! -e $ANN2_ICA_CORW_RESULT ]]; then
-    if ! train_mlp_pca $ANN2_ICA_CORW_CONF $ANN2_ICA_CORW_RESULT; then
+    if ! train_mlp_ica $ANN2_ICA_CORW_CONF $ANN2_ICA_CORW_RESULT; then
         cleanup $ANN2_ICA_CORW_RESULT
 	exit 10
     fi

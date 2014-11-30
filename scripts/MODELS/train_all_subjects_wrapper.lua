@@ -32,7 +32,7 @@ local script = table.remove(arg,1)
 assert(not script:match("^%-%-"), "Needs the training script as first argument")
 --
 local auc_and_sizes = {}
-print("#",script,list_base,cor_base)
+print("#",script)
 local train_script = assert(loadfile(script))
 local ARG_SIZE = #arg
 for _,subject in ipairs(common.SUBJECTS) do
