@@ -27,7 +27,6 @@ library(fda.usc)
 
 subjects <- c(unlist(strsplit(Sys.getenv("SUBJECTS"), " ")))
 sources <- Sys.getenv("DATA_PATH")
-files <- dir(sources)
 destinationPath <- Sys.getenv("COVRED_PATH")
 
 freqbase <- 400
@@ -35,8 +34,9 @@ ncoefs <- 15 # Number of elements in Fourier basis
 nslices <- 10
 
 for (subject in subjects) {
-    for (f in dir(paste(sources,subject,sep=""))) {
-        mat <- readMat(paste(sources,subject,"/",files[1],sep=""))[[1]]
+    write(paste("#",subject), stdout())
+    for (f in dir(paste(sources,subject,sep="/"))) {
+        mat <- readMat(paste(sources,subject,f,sep="/"))[[1]]
         sampling.frequency <- round(mat[,,1]$sampling.frequency)
         data <- mat[,,1]$data
         nchan <- dim(data)[1]
@@ -45,9 +45,9 @@ for (subject in subjects) {
         SDmatrix <- array(dim=c(nchan))
         steps <- seq(from=1, to=L, by=as.integer(sampling.frequency/freqbase))
         Aux <- data[,steps]
-        lo1 <- len(steps) / nslices
+        lo1 <- length(steps) / nslices
         for (chan in 1:nchan) {
-            SDmatrix[chan,i] <- sd(Aux[chan,])
+            SDmatrix[chan] <- sd(Aux[chan,])
             for (t in 1:nslices){
                 Aux1 <- Aux[chan,(((t-1)*lo1)+1):(t*lo1)]
                 Aux.coef <- t(fdata2fd(fdata(Aux1),type.basis="fourier",nbasis=ncoefs)$coefs)
@@ -60,9 +60,8 @@ for (subject in subjects) {
         aux1 <- apply(A1.sdcoefs, 1, mean)
         result <- cbind(t(aux1), t(SDmatrix))
         outname <- paste(destinationPath, "/", substr(f,1,nchar(f)-4), ".txt", sep="")
-        write.table(t(result), file=outname, sep=" ",
+        write.table(result, file=outname, sep=" ",
                     col.names=FALSE, row.names=FALSE)
-        
         rm(mat)
         rm(data)
         rm(A1)
