@@ -60,9 +60,22 @@ if [[ ! -e $WINDOWED_COR_PATH ]]; then
     echo "Computing eigen values of windowed correlations matrix"
     mkdir -p $WINDOWED_COR_PATH
     if ! Rscript scripts/PREPROCESS/correlation_60s_30s.R; then
-        echo "Computing eigen values of windowed correlations matrix"
-        echo "ERROR: Unable to compute eigen values of correlations matrix"
+        echo "ERROR: Unable to compute eigen values of windowed correlations matrix"
         cleanup $WINDOWED_COR_PATH
+        exit 10
+    fi
+fi
+
+#########################
+## GLBOAL CORRELATIONS ##
+#########################
+
+if [[ ! -e $CORG_PATH ]]; then
+    echo "Computing eigen values of correlations matrix"
+    mkdir -p $CORG_PATH
+    if ! Rscript scripts/PREPROCESS/compute_corg.R; then
+        echo "ERROR: Unable to compute eigen values of correlations matrix"
+        cleanup $CORG_PATH
         exit 10
     fi
 fi
