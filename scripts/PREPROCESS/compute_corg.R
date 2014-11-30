@@ -32,15 +32,15 @@ destinationPath <- Sys.getenv("CORG_PATH")
 corrDiffAv <- function(subject,f){
     outname <- paste(destinationPath,"/",substr(f,1,nchar(f)-4),".txt",sep="")
     if(!exists(outname)){
-        mat <- readMat(paste(sources,subject,"/",f,sep=""))[[1]]
+        mat <- readMat(paste(sources,subject,f,sep="/"))[[1]]
         A <- mat[,,1]$data
         nchannels <- nrow(A)
         n <- ncol(A)
         sampling.frequency <- mat[,,1]$sampling.frequency
         step <- min(ceiling(sampling.frequency/800):ceiling(sampling.frequency/200))
-        Adiff <- matrix(nrow=nchannels,ncol=n-paso)
+        Adiff <- matrix(nrow=nchannels,ncol=n-step)
         for(k in 1:nchannels){
-            Adiff[k,] <- A[k,(1+paso):n]-A[k,1:(n-paso)]
+            Adiff[k,] <- A[k,(1+step):n]-A[k,1:(n-step)]
         }
         CorrA <- cor(t(data.matrix(A)))
         CorrAdiff<-cor(t(data.matrix(Adiff)))
@@ -56,8 +56,9 @@ corrDiffAv <- function(subject,f){
     }
 }
 
-for subject in subjects {
-    for filename in dir(paste(sources, subject, sep="/")) {
+for(subject in subjects) {
+    write(paste("#",subject), stdout())
+    for(filename in dir(paste(sources, subject, sep="/"))) {
         corrDiffAv(subject, filename)
     }
 }
