@@ -197,7 +197,7 @@ assert(#models > 0, "None model has been trained :S")
 io.stdout:flush()
 ---------------------------------------------------------------------------
 -- save models to output prefix
-util.serialize(models, "%s/%s.net"%{PREFIX,SUBJECT})
+util.serialize({ params=params, models=models }, "%s/%s.net"%{PREFIX,SUBJECT})
 
 -- perform test prediction if given test output filename
 if params.test then

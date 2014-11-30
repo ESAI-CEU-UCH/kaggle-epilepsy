@@ -24,9 +24,9 @@
 ]]
 april_print_script_header(arg)
 --
-package.path = package.path .. ";/home/PRIVATE/experimentos/KAGGLE/EPILEPSY_PREDICTION/PAKO/scripts/?.lua"
+package.path = package.path .. ";./scripts/?.lua"
 -- library loading and name import
-local common = require "common2"
+local common = require "common"
 local cmd    = require "cmd"
 local posteriorKNN = knn.kdtree.posteriorKNN
 ---------------------------------------------------------------------------
@@ -34,35 +34,35 @@ local posteriorKNN = knn.kdtree.posteriorKNN
 local cmd_opt_parser = cmdOpt{
   program_name = arg[0]:basename(),
   argument_description = "",
-  main_description = "Training program for Kaggle epilepsy challenge",
+  main_description = "Training of KNNs for Kaggle epilepsy challenge",
 }
+--
 cmd.add_defopt(cmd_opt_parser)
 cmd.add_cv(cmd_opt_parser)
 cmd.add_knn(cmd_opt_parser)
 cmd.add_help(cmd_opt_parser)
+--
 local params = cmd_opt_parser:parse_args(arg,"defopt")
 ---------------------------------------------------------------------------
 -- extension of command line options
-if params.bsize == 0 then params.bsize = nil end
 local log_scale = true
 params.log_scale = log_scale
 --
-local SUBJECT = assert( params.list:basename():match("^([^_]+_.).+$"), 
-                        "Impossible to determine the subject" )
-local PREFIX = params.prefix or ""
+local SUBJECT = params.subject
+local PREFIX = params.prefix or "./"
 --
 params.PREFIX = PREFIX
 params.SUBJECT = SUBJECT
 ---------------------------------------------------------------------------
-local test_list = params.list:gsub("train$","test")
 local rnd = random(params.seed)
 
 print("# Loading training")
-local all_train_data,list_names = common.load_data(params.list, params)
-
+local all_train_data,list_names = common.load_data(params.fft, "*ictal*", params)
+-- compute training standarization
 local means,devs = common.compute_means_devs(all_train_data.input_dataset)
--- matrix(#means,1,means):toTabFilename("means2")
--- matrix(#devs,1,devs):toTabFilename("devs2")
+-- write standarization to output prefix
+util.serialize({means,devs}, "%s/%s_standarization.lua"%{PREFIX,SUBJECT})
+-- apply standarization to training data
 all_train_data.input_dataset = common.apply_std(all_train_data.input_dataset,
                                                 means, devs)
 local input_size = all_train_data.input_dataset:patternSize()
@@ -79,7 +79,6 @@ local function train_knn(rnd, input_dataset)
   kdt:push(mat)
   kdt:build()
   print("# Training done")
-  -- mat:toTabFilename("jarl2.mat")
   return kdt
 end
 
@@ -100,7 +99,7 @@ end
 -- CROSS-VALIDATION LOOP --
 ---------------------------
 local CV = common.train_with_crossvalidation
-local AUC,MV = CV(list_names, all_train_data, params,
+local AUC,MV,VAL_RESULTS = CV(list_names, all_train_data, params,
    -- train function
    function(train_data, val_data)
      local kdt = train_knn(rnd, train_data.input_dataset)
@@ -112,11 +111,13 @@ print("# LOSS:",table.unpack(MV))
 print("# AUC:",table.unpack(AUC))
 ---------------------------------------------------------------------------
 
+-- keep the training paths for this KNN
+util.serialize(params, "%s/%s_params.lua"%{PREFIX,SUBJECT})
+
 if params.test then
   local kdt = train_knn(rnd, all_train_data.input_dataset)
   print("# Loading test")
-  if params.cor then params.cor = params.cor:gsub(".train", ".test") end
-  local test_data,names = common.load_data(test_list,params)
+  local test_data,names = common.load_data(params.fft, "*test*", params)
   test_data.input_dataset = common.apply_std(test_data.input_dataset,means,devs)
   print("# Test num patterns = ", test_data.input_dataset:numPatterns())
   local tr_out_ds = all_train_data.output_dataset

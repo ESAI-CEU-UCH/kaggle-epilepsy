@@ -29,6 +29,8 @@
 ANN5_PCA_CORW_CONF=scripts/MODELS/confs/ann5_pca_corw.lua
 ANN2_ICA_CORW_CONF=scripts/MODELS/confs/ann2_ica_corw.lua
 ANN2P_PCA_CORW_CONF=scripts/MODELS/confs/ann2p_pca_corw.lua
+KNN_ICA_CONF=scripts/MODELS/confs/knn_ica.lua
+KNN_PCA_CONF=scripts/MODELS/confs/knn_pca.lua
 TRAIN_ALL_SCRIPT=scripts/MODELS/train_all_subjects_wrapper.lua
 MLP_TRAIN_SCRIPT=scripts/MODELS/train_one_subject_mlp.lua
 KNN_TRAIN_SCRIPT=scripts/MODELS/train_one_subject_knn.lua
@@ -95,6 +97,18 @@ train_mlp_ica()
     return $?
 }
 
+train_knn_pca()
+{
+    train $KNN_TRAIN_SCRIPT $1 $2 "--fft=$FFT_PCA_PATH --cor=$WINDOWED_COR_PATH"
+    return $?
+}
+
+train_knn_ica()
+{
+    train $KNN_TRAIN_SCRIPT $1 $2 "--fft=$FFT_ICA_PATH --cor=$WINDOWED_COR_PATH"
+    return $?
+}
+
 ###############################################################################
 
 if [[ ( ! -e $FFT_PCA_PATH ) || ( ! -e $FFT_ICA_PATH ) || ( ! -e $WINDOWED_COR_PATH ) ]]; then
@@ -132,6 +146,28 @@ fi
 if [[ ! -e $ANN2_ICA_CORW_RESULT ]]; then
     if ! train_mlp_ica $ANN2_ICA_CORW_CONF $ANN2_ICA_CORW_RESULT; then
         cleanup $ANN2_ICA_CORW_RESULT
+	exit 10
+    fi
+fi
+
+##################
+## KNN PCA+CORW ##
+##################
+
+if [[ ! -e $KNN_PCA_CORW_RESULT ]]; then
+    if ! train_knn_pca $KNN_PCA_CONF $KNN_PCA_CORW_RESULT; then
+        cleanup $KNN_PCA_CORW_RESULT
+	exit 10
+    fi
+fi
+
+##################
+## KNN ICA+CORW ##
+##################
+
+if [[ ! -e $KNN_ICA_CORW_RESULT ]]; then
+    if ! train_knn_ica $KNN_ICA_CONF $KNN_ICA_CORW_RESULT; then
+        cleanup $KNN_ICA_CORW_RESULT
 	exit 10
     fi
 fi

@@ -50,7 +50,7 @@ end
 
 function cmd.add_knn(cmd_opt_parser)
   assert(cmd_opt_parser, "Needs a cmdOpt object")
-  add_str(cmd_opt_parser, "K value", "KNN", "K", 6)
+  add_str(cmd_opt_parser, "K value", "KNN", "K", 40)
   add_num(cmd_opt_parser, "Seed", "seed", nil, 1234)
 end
 
