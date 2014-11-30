@@ -122,6 +122,7 @@ fi
 ###################
 
 if [[ ! -e $ANN5_PCA_CORW_RESULT ]]; then
+    mkdir -p $ANN5_PCA_CORW_RESULT
     if ! train_mlp_pca $ANN5_PCA_CORW_CONF $ANN5_PCA_CORW_RESULT; then
         cleanup $ANN5_PCA_CORW_RESULT
 	exit 10
@@ -133,6 +134,7 @@ fi
 ####################
 
 if [[ ! -e $ANN2P_PCA_CORW_RESULT ]]; then
+    mkdir -p $ANN2P_PCA_CORW_RESULT
     if ! train_mlp_pca $ANN2P_PCA_CORW_CONF $ANN2P_PCA_CORW_RESULT; then
         cleanup $ANN2P_PCA_CORW_RESULT
 	exit 10
@@ -144,6 +146,7 @@ fi
 ###################
 
 if [[ ! -e $ANN2_ICA_CORW_RESULT ]]; then
+    mkdir -p $ANN2_ICA_CORW_RESULT
     if ! train_mlp_ica $ANN2_ICA_CORW_CONF $ANN2_ICA_CORW_RESULT; then
         cleanup $ANN2_ICA_CORW_RESULT
 	exit 10
@@ -155,6 +158,7 @@ fi
 ##################
 
 if [[ ! -e $KNN_PCA_CORW_RESULT ]]; then
+    mkdir -p $KNN_PCA_CORW_RESULT
     if ! train_knn_pca $KNN_PCA_CONF $KNN_PCA_CORW_RESULT; then
         cleanup $KNN_PCA_CORW_RESULT
 	exit 10
@@ -166,6 +170,7 @@ fi
 ##################
 
 if [[ ! -e $KNN_ICA_CORW_RESULT ]]; then
+    mkdir -p $KNN_ICA_CORW_RESULT
     if ! train_knn_ica $KNN_ICA_CONF $KNN_ICA_CORW_RESULT; then
         cleanup $KNN_ICA_CORW_RESULT
 	exit 10

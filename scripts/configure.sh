@@ -111,15 +111,14 @@ if [[ -z $APRIL_EXEC || $APRIL_EXEC = "" || ! -e $APRIL_EXEC ]]; then
         echo "ERROR: Unable to configure APRIL-ANN :'("
         exit 10
     fi
+    echo "APRIL-ANN configured properly :-)"
 fi
 # removes keyboard interrupt trap (control-c)
 trap - SIGINT
 
-echo "APRIL-ANN configured properly :-)"
 cd $ROOT_PATH
 
 ##############################################################################
 
 echo "Configuring and installing R packages"
-
 Rscript scripts/configure.R
