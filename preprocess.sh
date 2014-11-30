@@ -80,6 +80,20 @@ if [[ ! -e $CORG_PATH ]]; then
     fi
 fi
 
+#######################
+## GLBOAL COVARIATES ##
+#######################
+
+if [[ ! -e $COVRED_PATH ]]; then
+    echo "Computing global covariates"
+    mkdir -p $COVRED_PATH
+    if ! Rscript scripts/PREPROCESS/compute_covarred.R; then
+        echo "ERROR: Unable to compute global covariates"
+        cleanup $COVRED_PATH
+        exit 10
+    fi
+fi
+
 ###########################
 ## PCA OVER FFT FEATURES ##
 ###########################

@@ -30,123 +30,45 @@ sources <- Sys.getenv("DATA_PATH")
 files <- dir(sources)
 destinationPath <- Sys.getenv("COVRED_PATH")
 
-lo1perros<-23976
+freqbase <- 400
+ncoefs <- 15 # Number of elements in Fourier basis
+nslices <- 10
 
-for (hh in 1:length(individuos)){
-  indiv<-individuos[hh]
-  files <- dir(paste(fuentes,indiv,sep=""))
-  
-  f<-files[1]
-
-  mat <- readMat(paste(fuentes,indiv,"/",f,sep=""))[[1]]
-  sampling.frequency <- mat[,,1]$sampling.frequency
-  A <- mat[,,1]$data
-  nchan <- dim(A)[1]
-  lo <- dim(A)[2]
-  lo1 <- as.integer(lo/10)
-  rm(A)
-  
-  seginter <- grep("interictal",files)
-  ninter <- length(seginter)
-  
-  segpre<-grep("preictal",files) #42
-  npre<-length(segpre)
-  
-  segtest<-grep("test",files) #1000
-  ntest<-length(segtest)
-  
-  ncoefs<-15 #Number of elements in Fourier basis
-
-  A1<-array(dim=c(nchan,10,ninter+npre,ncoefs))
-  A1.test<-array(dim=c(nchan,10,ntest,ncoefs))
-  
-  SDmatrix<-array(dim=c(nchan,ninter+npre))
-  SDmatrix.test<-array(dim=c(nchan,ntest))
-  
-  ncoefs<-15 #Número de elementos en la base de Fourier
-
-  #inter files
-  for (i in 1:ninter){
-    fich<-files[seginter[i]]
-    Aux<- readMat(paste(fuentes,indiv,"/",fich,sep=""))[[1]][,,1]$data
-    if (humanos[hh]=="S"){ #Re-sampling
-      paso<-(1:239760)*as.integer(lo1/lo1perros)
-      Aux<-Aux[,paso]
-      lo1<-lo1perros
+for (subject in subjects) {
+    for (f in dir(paste(sources,subject,sep=""))) {
+        mat <- readMat(paste(sources,subject,"/",files[1],sep=""))[[1]]
+        sampling.frequency <- round(mat[,,1]$sampling.frequency)
+        data <- mat[,,1]$data
+        nchan <- dim(data)[1]
+        L <- dim(data)[2]
+        A1 <- array(dim=c(nchan,nslices,ncoefs))
+        SDmatrix <- array(dim=c(nchan))
+        steps <- seq(from=1, to=L, by=as.integer(sampling.frequency/freqbase))
+        Aux <- data[,steps]
+        lo1 <- len(steps) / nslices
+        for (chan in 1:nchan) {
+            SDmatrix[chan,i] <- sd(Aux[chan,])
+            for (t in 1:nslices){
+                Aux1 <- Aux[chan,(((t-1)*lo1)+1):(t*lo1)]
+                Aux.coef <- t(fdata2fd(fdata(Aux1),type.basis="fourier",nbasis=ncoefs)$coefs)
+                A1[chan,t,] <- Aux.coef
+                rm(Aux1)
+                rm(Aux.coef)
+            }
+        }
+        A1.sdcoefs <- apply(A1, c(1,2), sd)
+        aux1 <- apply(A1.sdcoefs, 1, mean)
+        result <- cbind(t(aux1), t(SDmatrix))
+        outname <- paste(destinationPath, "/", substr(f,1,nchar(f)-4), ".txt", sep="")
+        write.table(t(result), file=outname, sep=" ",
+                    col.names=FALSE, row.names=FALSE)
+        
+        rm(mat)
+        rm(data)
+        rm(A1)
+        rm(SDmatrix)
+        rm(steps)
+        rm(Aux)
+        rm(result)
     }
-    for (chan in 1:nchan){
-      SDmatrix.test[chan,i]<-sd(Aux[chan,])
-      for (t in 1:10){
-        Aux1<-Aux[chan,(((t-1)*lo1)+1):(t*lo1)]
-        Aux.coef<-t(fdata2fd(fdata(Aux1),type.basis="fourier",nbasis=15)$coefs)
-        A1[chan,t,i,]<-Aux.coef
-      }
-    }
-  }
-  #pre files
-  for (i in 1:npre){
-    fich<-files[segpre[i]]
-    Aux<- readMat(paste(fuentes,indiv,"/",fich,sep=""))[[1]][,,1]$data
-    if (humanos[hh]=="S"){ #Re-sampling
-      paso<-(1:239760)*as.integer(lo1/lo1perros)
-      Aux<-Aux[,paso]
-      lo1<-lo1perros
-    }
-    for (chan in 1:nchan){
-      SDmatrix[chan,ninter+i]<-sd(Aux[chan,])
-      for (t in 1:10){
-        Aux1<-Aux[chan,(((t-1)*lo1)+1):(t*lo1)]
-        Aux.coef<-t(fdata2fd(fdata(Aux1),type.basis="fourier",nbasis=15)$coefs)
-        A1[chan,t,ninter+i,]<-Aux.coef
-      }
-    }
-  }
-  rm(Aux)
-  rm(Aux1)
-  rm(Aux.coef)
-  
-  #test files
-  for (i in 1:ntest){
-    fich<-files[segtest[i]]
-    Aux<- readMat(paste(fuentes,indiv,"/",fich,sep=""))[[1]][,,1]$data
-    if (humanos[hh]=="S"){ #Re-sampling
-      paso<-(1:239760)*as.integer(lo1/lo1perros)
-      Aux<-Aux[,paso]
-      lo1<-lo1perros
-    }
-    for (chan in 1:nchan){
-      SDmatrix.test[chan,i]<-sd(Aux[chan,])
-      for (t in 1:10){
-        Aux1<-Aux[chan,(((t-1)*lo1)+1):(t*lo1)]
-        Aux.coef<-t(fdata2fd(fdata(Aux1),type.basis="fourier",nbasis=15)$coefs)
-        A1.test[chan,t,i,]<-Aux.coef
-      }
-    }
-  }
-  rm(Aux)
-  rm(Aux1)
-  rm(Aux.coef)
-  
-  A1.sdcoefs<-apply(A1,c(1,2,3),sd)
-  A1.sdcoefs.test<-apply(A1.test,c(1,2,3),sd)
-
-  aux1<-apply(A1.sdcoefs,c(1,3),mean)
-  aux1.test<-apply(A1.sdcoefs.test,c(1,3),mean)
-  
-  unedatos<-cbind(t(aux1),t(SDmatrix)) #covariates
-  unedatosTEST<-cbind(t(aux1.test),t(SDmatrix.test)) #covariates
-  
-  for(i in 1:ninter){
-    nombrefichero<-paste(substr(as.character(files[i]),1,nchar(as.character(files[i]))-4),"COVRED.txt",sep="")
-    write.table(t(unedatos[i,]),file =nombrefichero, sep = " ", col.names = FALSE, row.names = FALSE)
-  }
-  for (i in 1:npre){
-    nombrefichero<-paste(substr(as.character(files[(ninter+i)]),1,nchar(as.character(files[(ninter+i)]))-4),"COV.txt",sep="")
-    write.table(unedatos[(ninter+i),],file =nombrefichero, sep = " ", col.names = FALSE, row.names = FALSE)
-  }
-  for (i in 1:ntest){
-    nombrefichero<-paste(substr(as.character(files[(ninter+npre+i)]),1,nchar(as.character(files[(ninter+npre+i)]))-4),"COV.txt",sep="")
-    write.table(t(unedatosTEST[i,]),file =nombrefichero, sep = " ", col.names = FALSE, row.names = FALSE)
-  }
-  cat(paste("Fin fichero ",hh,sep=""))
 }  
