@@ -37,7 +37,7 @@ corrDiffAv <- function(subject,f){
         nchannels <- nrow(A)
         n <- ncol(A)
         sampling.frequency <- mat[,,1]$sampling.frequency
-        step <- min(ceiling(sampling.frequency/800):ceiling(sampling.frequency/200))
+        step <- 1
         Adiff <- matrix(nrow=nchannels,ncol=n-step)
         for(k in 1:nchannels){
             Adiff[k,] <- A[k,(1+step):n]-A[k,1:(n-step)]
