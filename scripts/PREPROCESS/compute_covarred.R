@@ -73,4 +73,4 @@ for (subject in subjects) {
         rm(Aux)
         rm(result)
     }
-}  
+}

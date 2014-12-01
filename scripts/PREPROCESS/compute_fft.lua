@@ -37,7 +37,7 @@ local WSIZE     = 60   -- seconds
 local WADVANCE  = 30   -- seconds
 
 -- sequences output file handler
-local seqf = io.open(SEQUENCES_PATH, "w")
+local seqf = io.open(SEQUENCES_PATH, "a")
 for _,subject in ipairs( common.SUBJECTS ) do
   local MASK = "/%s/*.mat"%{subject}
   -- list of filenames

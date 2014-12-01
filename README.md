@@ -50,16 +50,16 @@ with same hardware configuration:
 ## General settings
 
 The configuration of the input data, subjects, and other stuff is in
-`settings.sh` script. The following environment variables can be indicate
-the location of data and the location of results folder:
+`settings.sh` script. The following environment variables indicate the location
+of data and result folders:
 
-- `DATA_PATH` indicates where the original data is. It will be organized in
-  subfolders, one for each available subjects, and this subfolders will
-  contain the corresponding MAT files.
-- `TMP_PATH` indicates the folder for intermediate results, as feature
+- `DATA_PATH=DATA` indicates where the original data is. It will be organized in
+  subfolders, one for each available subjects, and this subfolders will contain
+  the corresponding MAT files.
+- `TMP_PATH=TMP` indicates the folder for intermediate results, as feature
   extraction and models trainig.
-- `SUBMISSIONS_PATH` indicates where the two selected submissions will be
-  generated.
+- `SUBMISSIONS_PATH=SUBMISSIONS` indicates where the two selected submissions
+  will be generated.
 
 All other environment variables are computed depending in this three root paths.
 Note that all the system must be executed being in the root path of the git
@@ -75,29 +75,29 @@ the script `train.sh`:
 $ ./train.sh
 ```
 
-It generates intermediate files in `TMP/` folder. First, all the proposed
+It generates intermediate files in `$TMP_PATH` folder. First, all the proposed
 features are generated to disk:
 
-1. `TMP/FFT_60s_30s_BFPLOS` contains FFT filtered features using 1 min. windows.
-2. `TMP/FFT_60s_30s_BFPLOS_PCA/` contains the PCA transformation of (1).
-3. `TMP/FFT_60s_30s_BFPLOS_ICA/` contains the ICA transformation of (1).
-4. `TMP/COR_60s_30s/` contains eigen values of windowed correlation matrices,
+1. `$TMP_PATH/FFT_60s_30s_BFPLOS` contains FFT filtered features using 1 min. windows.
+2. `$TMP_PATH/FFT_60s_30s_BFPLOS_PCA/` contains the PCA transformation of (1).
+3. `$TMP_PATH/FFT_60s_30s_BFPLOS_ICA/` contains the ICA transformation of (1).
+4. `$TMP_PATH/COR_60s_30s/` contains eigen values of windowed correlation matrices,
    using 1 min. windows over segments.
-5. `TMP/CORG/` contains eigen values of correlation matrices computed over the
+5. `$TMP_PATH/CORG/` contains eigen values of correlation matrices computed over the
    whole segment.
-6. `TMP/COVRED/` contains different global statistics computed for each segment.
+6. `$TMP_PATH/COVRED/` contains different global statistics computed for each segment.
 
 Besides the features, PCA and ICA transformation are computed for each subject,
 and the transformation matrices are stored at:
 
-- `TMP/PCA_TRANS`
-- `TMP/ICA_TRANS`
+- `$TMP_PATH/PCA_TRANS`
+- `$TMP_PATH/ICA_TRANS`
 
 This preprocess can be executed without training by using the script
 `preprocess.sh`.
 
 One preprocessing step is ready, training of the proposed models starts. The
-models and test results are stored at different folders in `TMP/`. All of
+models and test results are stored at different folders in `$TMP_PATH`. All of
 this folders contains similar data:
 
 - `validation_SUBJECT.txt` is the concatenation of cross-validation output, used
@@ -107,17 +107,25 @@ this folders contains similar data:
 
 The models are stored at the following folders:
 
-1. `TMP/ANN2P_ICA_CORW_RESULT/`
-2. `TMP/ANN5_PCA_CORW_RESULT/`
-3. `TMP/ANN2_ICA_CORW_RESULT/`
-4. `TMP/KNN_PCA_CORW_RESULT/`
-5. `TMP/KNN_ICA_CORW_RESULT/`
-6. `TMP/KNN_CORG_RESULT/`
-7. `TMP/KNN_COVRED_RESULT/`
+1. `$TMP_PATH/ANN2P_ICA_CORW_RESULT/`
+2. `$TMP_PATH/ANN5_PCA_CORW_RESULT/`
+3. `$TMP_PATH/ANN2_ICA_CORW_RESULT/`
+4. `$TMP_PATH/KNN_PCA_CORW_RESULT/`
+5. `$TMP_PATH/KNN_ICA_CORW_RESULT/`
+6. `$TMP_PATH/KNN_CORG_RESULT/`
+7. `$TMP_PATH/KNN_COVRED_RESULT/`
 
 Testing procedure is incorporated in training scripts, but it is possible to
 run it using the script `test.sh`.
 
 ## Recipe to train a new subject
+
+In order to train a new subject, you can use `train_subject.sh` script, which
+receives as argument the name of the subject:
+
+```
+$ ./train_subject.sh SUBJECT_NAME
+```
+
 
 ## Recipe to test new data for a trained subject
