@@ -2,6 +2,8 @@
 export DATA_PATH=DATA
 # Intermediate results path
 export TMP_PATH=TMP
+# Submissions results path
+export SUBMISSIONS_PATH=SUBMISSIONS
 # Change this if you want verbose output during training
 export VERBOSE_TRAIN=0
 # The following parameters are fore intermediate results

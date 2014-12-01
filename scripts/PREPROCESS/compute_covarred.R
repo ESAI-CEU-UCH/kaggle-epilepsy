@@ -24,7 +24,10 @@
 library(R.matlab)
 library(MASS)
 library(fda.usc)
+library(foreach)
+library(doMC)
 
+registerDoMC(Sys.getenv("OMP_NUM_THREADS"))  # the number of CPU cores
 subjects <- c(unlist(strsplit(Sys.getenv("SUBJECTS"), " ")))
 sources <- Sys.getenv("DATA_PATH")
 destinationPath <- Sys.getenv("COVRED_PATH")
@@ -35,7 +38,9 @@ nslices <- 10
 
 for (subject in subjects) {
     write(paste("#",subject), stdout())
-    for (f in dir(paste(sources,subject,sep="/"))) {
+    files <- dir(paste(sources,subject,sep="/"))
+    foreach(i=1:length(files)) %dopar% {
+        f <- files[i]
         mat <- readMat(paste(sources,subject,f,sep="/"))[[1]]
         sampling.frequency <- round(mat[,,1]$sampling.frequency)
         data <- mat[,,1]$data
@@ -45,15 +50,13 @@ for (subject in subjects) {
         SDmatrix <- array(dim=c(nchan))
         steps <- seq(from=1, to=L, by=as.integer(sampling.frequency/freqbase))
         Aux <- data[,steps]
-        lo1 <- length(steps) / nslices
+        lo1 <- as.integer(length(steps) / nslices)
         for (chan in 1:nchan) {
             SDmatrix[chan] <- sd(Aux[chan,])
             for (t in 1:nslices){
                 Aux1 <- Aux[chan,(((t-1)*lo1)+1):(t*lo1)]
                 Aux.coef <- t(fdata2fd(fdata(Aux1),type.basis="fourier",nbasis=ncoefs)$coefs)
                 A1[chan,t,] <- Aux.coef
-                rm(Aux1)
-                rm(Aux.coef)
             }
         }
         A1.sdcoefs <- apply(A1, c(1,2), sd)
