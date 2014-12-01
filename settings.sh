@@ -30,3 +30,20 @@ export KNN_COVRED_RESULT=$TMP_PATH/KNN_COVRED_RESULT/
 # Number of threads available, change it in the way you need (only
 # useful if you have MKL installed, or specific ATLAS library)
 export OMP_NUM_THREADS=4
+# check data paths
+if [[ ! -d $DATA_PATH ]]; then
+    echo "The indicated data path $DATA_PATH is not a folder"
+    exit 10
+fi
+if [[ ! -d $TMP_PATH ]]; then
+    echo "The indicated tmp path $TMP_PATH is not a folder"
+    exit 10
+fi
+if [[ ! -d $SUBMISSIONS_PATH ]]; then
+    echo "The indicated submissions path $SUBMISSIONS_PATH is not a folder"
+    exit 10
+fi
+if [[ -z $SUBJECTS ]]; then
+    echo "The indicated data path doesn't contain any subject subfolder"
+    exit 10
+fi

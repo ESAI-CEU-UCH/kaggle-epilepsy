@@ -48,6 +48,11 @@ mkdir -p $TMP_PATH
 SUBJECTS=$1
 SUBJECT=$1
 
+if [[ ! -d $DATA_PATH/$SUBJECT ]]; then
+    echo "Unable to locate $DATA_PATH/$SUBJECT subject folder"
+    exit 10
+fi
+
 cleanup()
 {
     echo "CLEANING UP, PLEASE WAIT UNTIL FINISH"
