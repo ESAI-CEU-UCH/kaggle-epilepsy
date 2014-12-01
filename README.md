@@ -87,7 +87,7 @@ features are generated to disk:
    whole segment.
 6. `$TMP_PATH/COVRED/` contains different global statistics computed for each segment.
 
-Besides the features, PCA and ICA transformation are computed for each subject,
+Besides the features, PCA and ICA transformations are computed for each subject,
 and the transformation matrices are stored at:
 
 - `$TMP_PATH/PCA_TRANS`
@@ -96,16 +96,18 @@ and the transformation matrices are stored at:
 This preprocess can be executed without training by using the script
 `preprocess.sh`.
 
-One preprocessing step is ready, training of the proposed models starts. The
-models and test results are stored at different folders in `$TMP_PATH`. All of
-this folders contains similar data:
+Once preprocessing step is ready, training of the proposed models starts. The
+model results are stored in subfolders of `$TMP_PATH`. This subfolders contain
+similar data:
 
 - `validation_SUBJECT.txt` is the concatenation of cross-validation output, used
   to optimize the final ensemble.
 - `validation_SUBJECT.test.txt` is the test results corresponding to the
-  indicated subject.
+  indicated subject (without CSV header).
+- `test.txt` is the concatenation of all test results with the CSV header needed
+  to send it as submission to Kaggle.
 
-The models are stored at the following folders:
+The trained systems are stored at folders:
 
 1. `$TMP_PATH/ANN2P_ICA_CORW_RESULT/`
 2. `$TMP_PATH/ANN5_PCA_CORW_RESULT/`
