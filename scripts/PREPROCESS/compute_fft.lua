@@ -44,7 +44,7 @@ for _,subject in ipairs( common.SUBJECTS ) do
   local list = glob(DATA_PATH .. MASK)
   -- load first matlab matrix to get subject sampling frequency (it must be the
   -- same over all files)
-  local _, HZ = common.load_matlab_file(list[1])
+  local _, HZ, channels = common.load_matlab_file(list[1])
   -- round sampling frequency
   HZ = math.round(HZ)
   -- the FFT_SIZE is the closest power of two
@@ -56,7 +56,8 @@ for _,subject in ipairs( common.SUBJECTS ) do
                                      common.make_prep_function(HZ, FFT_SIZE,
                                                                WSIZE, WADVANCE,
                                                                OUTPUT_PATH,
-                                                               filter),
+                                                               filter,
+                                                               channels),
                                      tostring)
   -- write sequences into output sequences file
   for i,v in ipairs(sequences) do

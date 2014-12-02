@@ -31,7 +31,7 @@ destinationPath <- Sys.getenv("CORG_PATH")
 
 corrDiffAv <- function(subject,f){
     outname <- paste(destinationPath,"/",substr(f,1,nchar(f)-4),".txt",sep="")
-    if(!exists(outname)){
+    if(!file.exists(outname)){
         mat <- readMat(paste(sources,subject,f,sep="/"))[[1]]
         A <- mat[,,1]$data
         nchannels <- nrow(A)

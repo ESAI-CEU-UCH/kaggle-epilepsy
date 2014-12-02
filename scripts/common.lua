@@ -342,10 +342,11 @@ end
 -- preprocess (FFT computation) a list of matlab filenames. The closure returns
 -- the sequence number of the file, in order to extract out this information for
 -- cross-validation scheme.
-function common.make_prep_function(HZ,FFT_SIZE,WSIZE,WADVANCE,out_dir,filter)
+function common.make_prep_function(HZ,FFT_SIZE,WSIZE,WADVANCE,out_dir,
+                                   filter,channels)
   return function(mat_filename)
-    local aux = "%s/%s.channel_01.csv.gz" %
-      { out_dir, (mat_filename:basename():gsub("%.mat", "" )) }
+    local aux = "%s/%s.channel_%02d.csv.gz" %
+      { out_dir, (mat_filename:basename():gsub("%.mat", "" )), channels }
     if not common.exists(aux) then
       print("#",mat_filename)
       local m,hz,N,seq = common.load_matlab_file(mat_filename)
@@ -358,6 +359,7 @@ function common.make_prep_function(HZ,FFT_SIZE,WSIZE,WADVANCE,out_dir,filter)
       -- the FFT_SIZE.
       local fft_tbl = common.compute_fft(m, hz, WSIZE, WADVANCE)
       assert( #fft_tbl == N, "Incorrect number of channels" )
+      assert( N == channels, "Incorrect number of channels" )
       -- for each channel
       for i=1,#fft_tbl do
         -- store every channel in an independent file

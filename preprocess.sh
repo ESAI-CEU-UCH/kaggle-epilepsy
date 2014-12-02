@@ -32,7 +32,7 @@ cleanup()
     echo "CLEANING UP, PLEASE WAIT UNTIL FINISH"
     cd $ROOT_PATH
     for dest in "$@"; do
-	for i in $(ls -t $dest | head -n 10); do
+	for i in $(ls -t $dest | head -n 16); do
             rm -f $dest/$i
 	done
     done
@@ -46,8 +46,10 @@ echo "Computing FFT features"
 # Computes FFT features. Additionally it writes sequence numbers to
 # SEQUENCES_PATH.
 if ! $APRIL_EXEC scripts/PREPROCESS/compute_fft.lua $DATA_PATH $FFT_PATH $SEQUENCES_PATH; then
+    sleep 2
     echo "ERROR: Unable to compute FFT features"
-    cleanup $FFT_PATH
+    echo "CLEANING UP, PLEASE WAIT UNTIL FINISH"
+    rm -Rf $FFT_PATH $SEQUENCES_PATH
     exit 10
 fi
 
