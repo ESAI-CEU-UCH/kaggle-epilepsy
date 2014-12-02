@@ -32,9 +32,10 @@ subjects <- c(unlist(strsplit(Sys.getenv("SUBJECTS"), " ")))
 sources <- Sys.getenv("DATA_PATH")
 destinationPath <- Sys.getenv("COVRED_PATH")
 
-freqbase <- 400
+#freqbase <- 400
 ncoefs <- 15 # Number of elements in Fourier basis
 nslices <- 10
+lbase <- 23976
 
 for (subject in subjects) {
     write(paste("#",subject), stdout())
@@ -48,9 +49,13 @@ for (subject in subjects) {
         L <- dim(data)[2]
         A1 <- array(dim=c(nchan,nslices,ncoefs))
         SDmatrix <- array(dim=c(nchan))
-        steps <- seq(from=1, to=L, by=as.integer(sampling.frequency/freqbase))
-        Aux <- data[,steps]
-        lo1 <- as.integer(length(steps) / nslices)
+        lo1 <- as.integer(L / nslices)
+        Aux <- data
+        if (lo1 != lbase) {
+            steps <- (1:(lbase*10))*as.integer(lo1/lbase)
+            # steps <- seq(from=1, to=L, by=as.integer(sampling.frequency/freqbase))
+            Aux <- data[,steps]
+        }
         for (chan in 1:nchan) {
             SDmatrix[chan] <- sd(Aux[chan,])
             for (t in 1:nslices){

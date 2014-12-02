@@ -34,6 +34,7 @@ ANN2P_PCA_CORW_CONF=scripts/MODELS/confs/ann2p_pca_corw.lua
 KNN_ICA_CONF=scripts/MODELS/confs/knn_ica.lua
 KNN_PCA_CONF=scripts/MODELS/confs/knn_pca.lua
 KNN_CORG_CONF=scripts/MODELS/confs/knn_corg.lua
+KNN_COVRED_CONF=scripts/MODELS/confs/knn_covred.lua
 TRAIN_ALL_SCRIPT=scripts/MODELS/train_all_subjects_wrapper.lua
 MLP_TRAIN_SCRIPT=scripts/MODELS/train_one_subject_mlp.lua
 KNN_TRAIN_SCRIPT=scripts/MODELS/train_one_subject_knn.lua
@@ -230,6 +231,21 @@ train_knn_corg()
     return $?
 }
 
+train_knn_covred()
+{
+    train $KNN_TRAIN_SCRIPT $1 $2 "--fft=$COVRED_PATH"
+    return $?
+}
+
+bmc_ensemble()
+{
+    $APRIL_EXEC scripts/ENSEMBLE/bmc_ensemble.lua \
+        $ANN2P_PCA_CORW_RESULT $ANN5_PCA_CORW_RESULT $ANN2_ICA_CORW_RESULT \
+        $KNN_ICA_CORW_RESULT $KNN_PCA_CORW_RESULT \
+        $KNN_CORG_RESULT $KNN_COVRED_RESULT > $BMC_ENSEMBLE_RESULT/test.$SUBJECT.txt 2> $BMC_ENSEMBLE_RESULT/cv.$SUBJECT.log
+    return $?
+}
+
 ###############################################################################
 
 ###################
@@ -289,5 +305,25 @@ fi
 mkdir -p $KNN_CORG_RESULT
 if ! train_knn_corg $KNN_CORG_CONF $KNN_CORG_RESULT; then
     cleanup $KNN_CORG_RESULT
+    exit 10
+fi
+
+################
+## KNN COVRED ##
+################
+
+mkdir -p $KNN_COVRED_RESULT
+if ! train_knn_covred $KNN_COVRED_CONF $KNN_COVRED_RESULT; then
+    cleanup $KNN_COVRED_RESULT
+    exit 10
+fi
+
+##################
+## BMC ENSEMBLE ##
+##################
+
+mkdir -p $BMC_ENSEMBLE_RESULT
+if ! bmc_ensemble; then
+    cleanup $BMC_ENSEMBLE_RESULT
     exit 10
 fi
