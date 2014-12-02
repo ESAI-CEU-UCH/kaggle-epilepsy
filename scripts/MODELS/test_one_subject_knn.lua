@@ -31,6 +31,8 @@ local posteriorKNN = knn.kdtree.posteriorKNN
 local model_path = assert(arg[1], "Needs a model path as first argument")
 local subject = assert(arg[2], "Needs a subject name as second argument")
 local test = assert(arg[3], "Needs an output test result filename as third argument")
+local FFT = arg[4]
+local COR = arg[5]
 io.open(test, "w"):close()
 ---------------------------------------------------------------------------
 local params = loadfile("%s/%s_params.lua"%{model_path,subject})()
@@ -72,6 +74,9 @@ end
 ------------------------------------------------
 -- KD-Tree training given a RNG and a dataset
 local kdt = train_knn(rnd, all_train_data.input_dataset)
+--
+if FFT then params.fft = FFT end
+if COR then params.cor = COR end
 --
 print("# Loading test")
 local test_data,names = common.load_data(params.fft, "*test*", params)

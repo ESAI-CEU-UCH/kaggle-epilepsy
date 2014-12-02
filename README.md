@@ -58,10 +58,10 @@ of data and result folders:
 - `DATA_PATH=DATA` indicates where the original data is. It will be organized in
   subfolders, one for each available subjects, and this subfolders will contain
   the corresponding MAT files.
-- `TMP_PATH=TMP` indicates the folder for intermediate results, as feature
-  extraction and models trainig.
-- `SUBMISSIONS_PATH=SUBMISSIONS` indicates where the two selected submissions
-  will be generated.
+- `TMP_PATH=TMP` indicates the folder for intermediate results (feature extraction).
+- `MODELS_PATH=MODELS` indicates the folder where models training and results
+  are stored.
+- `SUBMISSIONS_PATH=SUBMISSIONS` indicates where test results will be generated.
 
 All other environment variables are computed depending in this three root paths.
 Note that all the system must be executed being in the root path of the git
@@ -92,14 +92,14 @@ features are generated to disk:
 Besides the features, PCA and ICA transformations are computed for each subject,
 and the transformation matrices are stored at:
 
-- `$TMP_PATH/PCA_TRANS`
-- `$TMP_PATH/ICA_TRANS`
+- `$MODELS_PATH/PCA_TRANS`
+- `$MODELS_PATH/ICA_TRANS`
 
 This preprocess can be executed without training by using the script
 `preprocess.sh`.
 
 Once preprocessing step is ready, training of the proposed models starts. The
-model results are stored in subfolders of `$TMP_PATH`. This subfolders contain
+model results are stored in subfolders of `$MODELS_PATH`. This subfolders contain
 similar data:
 
 - `validation_SUBJECT.txt` is the concatenation of cross-validation output, used
@@ -111,13 +111,13 @@ similar data:
 
 The trained systems are stored at folders:
 
-1. `$TMP_PATH/ANN2P_ICA_CORW_RESULT/`
-2. `$TMP_PATH/ANN5_PCA_CORW_RESULT/`
-3. `$TMP_PATH/ANN2_ICA_CORW_RESULT/`
-4. `$TMP_PATH/KNN_PCA_CORW_RESULT/`
-5. `$TMP_PATH/KNN_ICA_CORW_RESULT/`
-6. `$TMP_PATH/KNN_CORG_RESULT/`
-7. `$TMP_PATH/KNN_COVRED_RESULT/`
+1. `$MODELS_PATH/ANN2P_ICA_CORW_RESULT/`
+2. `$MODELS_PATH/ANN5_PCA_CORW_RESULT/`
+3. `$MODELS_PATH/ANN2_ICA_CORW_RESULT/`
+4. `$MODELS_PATH/KNN_PCA_CORW_RESULT/`
+5. `$MODELS_PATH/KNN_ICA_CORW_RESULT/`
+6. `$MODELS_PATH/KNN_CORG_RESULT/`
+7. `$MODELS_PATH/KNN_COVRED_RESULT/`
 
 Testing procedure is incorporated in training scripts, but it is possible to
 run it using the script `test.sh`.

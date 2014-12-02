@@ -344,28 +344,34 @@ end
 -- cross-validation scheme.
 function common.make_prep_function(HZ,FFT_SIZE,WSIZE,WADVANCE,out_dir,filter)
   return function(mat_filename)
-    print("#",mat_filename)
-    local m,hz,N,seq = common.load_matlab_file(mat_filename)
-    collectgarbage("collect")
-    -- sanity check
-    assert( math.abs(hz - HZ) < 1 )
-    -- fft_tbl is an array of N FFT matrices with size TxF, where N is the
-    -- number of channels (subject dependent), T is the number temporal slices
-    -- (depends in WSIZE, WADVANCE and the number of columns in m) and F is
-    -- the FFT_SIZE.
-    local fft_tbl = common.compute_fft(m, hz, WSIZE, WADVANCE)
-    assert( #fft_tbl == N, "Incorrect number of channels" )
-    -- for each channel
-    for i=1,#fft_tbl do
-      -- store every channel in an independent file
-      local out_filename = "/%s.channel_%02d.csv.gz" %
-        { (mat_filename:basename():gsub("%.mat", "" )), i, }
+    local aux = "%s/%s.channel_01.csv.gz" %
+      { out_dir, (mat_filename:basename():gsub("%.mat", "" )) }
+    if not common.exists(aux) then
+      print("#",mat_filename)
+      local m,hz,N,seq = common.load_matlab_file(mat_filename)
+      collectgarbage("collect")
       -- sanity check
-      assert( fft_tbl[i]:dim(2) == FFT_SIZE, fft_tbl[i]:dim(2) )
-      local bf = filter( fft_tbl[i] )
-      bf:toTabFilename(out_dir .. out_filename)
+      assert( math.abs(hz - HZ) < 1 )
+      -- fft_tbl is an array of N FFT matrices with size TxF, where N is the
+      -- number of channels (subject dependent), T is the number temporal slices
+      -- (depends in WSIZE, WADVANCE and the number of columns in m) and F is
+      -- the FFT_SIZE.
+      local fft_tbl = common.compute_fft(m, hz, WSIZE, WADVANCE)
+      assert( #fft_tbl == N, "Incorrect number of channels" )
+      -- for each channel
+      for i=1,#fft_tbl do
+        -- store every channel in an independent file
+        local out_filename = "/%s.channel_%02d.csv.gz" %
+          { (mat_filename:basename():gsub("%.mat", "" )), i, }
+        -- sanity check
+        assert( fft_tbl[i]:dim(2) == FFT_SIZE, fft_tbl[i]:dim(2) )
+        local bf = filter( fft_tbl[i] )
+        bf:toTabFilename(out_dir .. out_filename)
+      end
+      return seq
+    else
+      return -1
     end
-    return seq
   end
 end
 
@@ -717,6 +723,11 @@ function common.validate(classify, val_data, loss, nrows, log_scale, combine, ..
     end
   end
   return loss:get_accum_loss()
+end
+
+function common.exists(filename)
+  local f = io.open(filename)
+  if not f then return false else f:close() return true end
 end
 
 return common

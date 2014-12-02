@@ -57,11 +57,14 @@ for _,subject in ipairs( common.SUBJECTS ) do
                    function(filename)
                      collectgarbage("collect")
                      local mask = filename:gsub("channel_01", "channel_??")
-                     local list = glob(mask)
-                     local m = matrix.join(2, iterator(list):map(read):table())
-                     local out = transform(m)
-                     out:toTabFilename("%s/%s.txt"%{OUTPUT_PATH,
-                                                    filename:basename():
-                                                      gsub(".channel_.*$","")})
+                     local outname = "%s/%s.txt"%{OUTPUT_PATH,
+                                                  filename:basename():
+                                                    gsub(".channel_.*$","")}
+                     if not common.exists(outname) then
+                       local list = glob(mask)
+                       local m = matrix.join(2, iterator(list):map(read):table())
+                       local out = transform(m)
+                       out:toTabFilename(outname)
+                     end
   end)
 end

@@ -34,6 +34,12 @@ BASE=$(basename $TEST_OUTPUT)
 
 ###############################################################################
 
+if ! ./preprocess.sh; then
+    exit 10
+fi
+
+###############################################################################
+
 cleanup()
 {
     rm -f $TEST_OUTPUT
@@ -52,8 +58,10 @@ test_subject()
     script=$1
     model=$2
     subject=$3
+    fft=$4
+    cor=$5
     mkdir -p $model.TEST
-    $APRIL_EXEC $script $model $subject $model.TEST/validation_$subject.test.txt
+    $APRIL_EXEC $script $model $subject $model.TEST/validation_$subject.test.txt $fft $cor
     return $?
 }
 
@@ -61,7 +69,9 @@ test_mlp()
 {
     $model=$1
     $subject=$2
-    test_subject $MLP_TEST_SCRIPT $model $subject
+    $fft=$3
+    $cor=$4
+    test_subject $MLP_TEST_SCRIPT $model $subject $fft $cor
     return $?
 }
 
@@ -69,7 +79,9 @@ test_knn()
 {
     $model=$1
     $subject=$2
-    test_subject $KNN_TEST_SCRIPT $model $subject
+    $fft=$3
+    $cor=$4
+    test_subject $KNN_TEST_SCRIPT $model $subject $fft $cor
     return $?
 }
 
@@ -129,37 +141,37 @@ fi
 for $subject in $SUBJECTS; do
     echo "# $subject"
     
-    if ! test_mlp $ANN5_PCA_CORW_RESULT $subject; then
+    if ! test_mlp $ANN5_PCA_CORW_RESULT $subject $FFT_PCA_PATH $WINDOWED_COR_PATH; then
         cleanup
         exit 10
     fi
 
-    if ! test_mlp $ANN2P_PCA_CORW_RESULT; then
+    if ! test_mlp $ANN2P_PCA_CORW_RESULT $FFT_PCA_PATH $WINDOWED_COR_PATH; then
         cleanup
         exit 10
     fi
     
-    if ! test_mlp $ANN2_ICA_CORW_RESULT; then
+    if ! test_mlp $ANN2_ICA_CORW_RESULT $FFT_ICA_PATH $WINDOWED_COR_PATH; then
         cleanup
         exit 10
     fi
 
-    if ! test_knn $KNN_PCA_CORW_RESULT; then
+    if ! test_knn $KNN_PCA_CORW_RESULT $FFT_PCA_PATH $WINDOWED_COR_PATH; then
         cleanup
         exit 10
     fi
 
-    if ! test_knn $KNN_ICA_CORW_RESULT; then
+    if ! test_knn $KNN_ICA_CORW_RESULT $FFT_ICA_PATH $WINDOWED_COR_PATH; then
         cleanup
         exit 10
     fi
 
-    if ! test_knn $KNN_CORG_RESULT; then
+    if ! test_knn $KNN_CORG_RESULT $CORG_PATH; then
         cleanup
         exit 10
     fi
 
-    if ! test_knn $KNN_COVRED_RESULT; then
+    if ! test_knn $KNN_COVRED_RESULT $COVRED_PATH; then
         cleanup
         exit 10
     fi

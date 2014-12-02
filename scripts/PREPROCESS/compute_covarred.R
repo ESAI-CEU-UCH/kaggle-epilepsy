@@ -42,40 +42,42 @@ for (subject in subjects) {
     files <- dir(paste(sources,subject,sep="/"))
     foreach(i=1:length(files)) %dopar% {
         f <- files[i]
-        mat <- readMat(paste(sources,subject,f,sep="/"))[[1]]
-        sampling.frequency <- round(mat[,,1]$sampling.frequency)
-        data <- mat[,,1]$data
-        nchan <- dim(data)[1]
-        L <- dim(data)[2]
-        A1 <- array(dim=c(nchan,nslices,ncoefs))
-        SDmatrix <- array(dim=c(nchan))
-        lo1 <- as.integer(L / nslices)
-        Aux <- data
-        if (lo1 != lbase) {
-            steps <- (1:(lbase*10))*as.integer(lo1/lbase)
-            # steps <- seq(from=1, to=L, by=as.integer(sampling.frequency/freqbase))
-            Aux <- data[,steps]
-        }
-        for (chan in 1:nchan) {
-            SDmatrix[chan] <- sd(Aux[chan,])
-            for (t in 1:nslices){
-                Aux1 <- Aux[chan,(((t-1)*lo1)+1):(t*lo1)]
-                Aux.coef <- t(fdata2fd(fdata(Aux1),type.basis="fourier",nbasis=ncoefs)$coefs)
-                A1[chan,t,] <- Aux.coef
-            }
-        }
-        A1.sdcoefs <- apply(A1, c(1,2), sd)
-        aux1 <- apply(A1.sdcoefs, 1, mean)
-        result <- cbind(t(aux1), t(SDmatrix))
         outname <- paste(destinationPath, "/", substr(f,1,nchar(f)-4), ".txt", sep="")
-        write.table(result, file=outname, sep=" ",
-                    col.names=FALSE, row.names=FALSE)
-        rm(mat)
-        rm(data)
-        rm(A1)
-        rm(SDmatrix)
-        rm(steps)
-        rm(Aux)
-        rm(result)
+        if(!exists(outname)){
+            mat <- readMat(paste(sources,subject,f,sep="/"))[[1]]
+            sampling.frequency <- round(mat[,,1]$sampling.frequency)
+            data <- mat[,,1]$data
+            nchan <- dim(data)[1]
+            L <- dim(data)[2]
+            A1 <- array(dim=c(nchan,nslices,ncoefs))
+            SDmatrix <- array(dim=c(nchan))
+            lo1 <- as.integer(L / nslices)
+            Aux <- data
+            if (lo1 != lbase) {
+                steps <- (1:(lbase*10))*as.integer(lo1/lbase)
+                                        # steps <- seq(from=1, to=L, by=as.integer(sampling.frequency/freqbase))
+                Aux <- data[,steps]
+            }
+            for (chan in 1:nchan) {
+                SDmatrix[chan] <- sd(Aux[chan,])
+                for (t in 1:nslices){
+                    Aux1 <- Aux[chan,(((t-1)*lo1)+1):(t*lo1)]
+                    Aux.coef <- t(fdata2fd(fdata(Aux1),type.basis="fourier",nbasis=ncoefs)$coefs)
+                    A1[chan,t,] <- Aux.coef
+                }
+            }
+            A1.sdcoefs <- apply(A1, c(1,2), sd)
+            aux1 <- apply(A1.sdcoefs, 1, mean)
+            result <- cbind(t(aux1), t(SDmatrix))
+            write.table(result, file=outname, sep=" ",
+                        col.names=FALSE, row.names=FALSE)
+            rm(mat)
+            rm(data)
+            rm(A1)
+            rm(SDmatrix)
+            rm(steps)
+            rm(Aux)
+            rm(result)
+        }
     }
 }

@@ -31,6 +31,8 @@ local common = require "common"
 local model_path = assert(arg[1], "Needs a model path as first argument")
 local subject = assert(arg[2], "Needs a subject name as second argument")
 local test = assert(arg[3], "Needs an output test result filename as third argument")
+local FFT = arg[4]
+local COR = arg[5]
 io.open(test, "w"):close()
 ---------------------------------------------------------------------------
 local model_table = loadfile("%s/%s.net"%{model_path,subject})()
@@ -39,6 +41,8 @@ local means,devs = table.unpack( loadfile("%s/%s_standarization.lua"%
 --
 local models = model_table.models
 local params = model_table.params
+if FFT then params.fft = FFT end
+if COR then params.cor = COR end
 ---------------------------------------------------------------------------
 assert(#models > 0, "None model has been trained :S")
 ---------------------------------------------------------------------------

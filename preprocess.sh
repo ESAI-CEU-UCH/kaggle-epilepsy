@@ -32,7 +32,9 @@ cleanup()
     echo "CLEANING UP, PLEASE WAIT UNTIL FINISH"
     cd $ROOT_PATH
     for dest in "$@"; do
-        rm -Rf $dest
+	for i in $(ls -t $dest | head -n 10); do
+            rm -f $dest/$i
+	done
     done
 }
 
@@ -40,102 +42,88 @@ cleanup()
 ## FFT FEATURES ##
 ##################
 
-# Avoid FFT computation if not needed
-if [[ ! -e $FFT_PATH ]]; then
-    echo "Computing FFT features"
-    # Computes FFT features. Additionally it writes sequence numbers to
-    # SEQUENCES_PATH.
-    if ! $APRIL_EXEC scripts/PREPROCESS/compute_fft.lua $DATA_PATH $FFT_PATH $SEQUENCES_PATH; then
-        echo "ERROR: Unable to compute FFT features"
-        cleanup $FFT_PATH $SEQUENCES_PATH
-        exit 10
-    fi
+echo "Computing FFT features"
+# Computes FFT features. Additionally it writes sequence numbers to
+# SEQUENCES_PATH.
+if ! $APRIL_EXEC scripts/PREPROCESS/compute_fft.lua $DATA_PATH $FFT_PATH $SEQUENCES_PATH; then
+    echo "ERROR: Unable to compute FFT features"
+    cleanup $FFT_PATH
+    exit 10
 fi
+
+sort -u $SEQUENCES_PATH > $SEQUENCES_PATH.bak
+mv -f $SEQUENCES_PATH.bak $SEQUENCES_PATH
 
 ###############################
 ## WINDOWED CORRELATIONS EIG ##
 ###############################
 
-if [[ ! -e $WINDOWED_COR_PATH ]]; then
-    echo "Computing eigen values of windowed correlations matrix"
-    mkdir -p $WINDOWED_COR_PATH
-    if ! Rscript scripts/PREPROCESS/correlation_60s_30s.R; then
-        echo "ERROR: Unable to compute eigen values of windowed correlations matrix"
-        cleanup $WINDOWED_COR_PATH
-        exit 10
-    fi
+echo "Computing eigen values of windowed correlations matrix"
+mkdir -p $WINDOWED_COR_PATH
+if ! Rscript scripts/PREPROCESS/correlation_60s_30s.R; then
+    echo "ERROR: Unable to compute eigen values of windowed correlations matrix"
+    cleanup $WINDOWED_COR_PATH
+    exit 10
 fi
 
 #########################
 ## GLBOAL CORRELATIONS ##
 #########################
 
-if [[ ! -e $CORG_PATH ]]; then
-    echo "Computing eigen values of correlations matrix"
-    mkdir -p $CORG_PATH
-    if ! Rscript scripts/PREPROCESS/compute_corg.R; then
-        echo "ERROR: Unable to compute eigen values of correlations matrix"
-        cleanup $CORG_PATH
-        exit 10
-    fi
+echo "Computing eigen values of correlations matrix"
+mkdir -p $CORG_PATH
+if ! Rscript scripts/PREPROCESS/compute_corg.R; then
+    echo "ERROR: Unable to compute eigen values of correlations matrix"
+    cleanup $CORG_PATH
+    exit 10
 fi
 
 #######################
 ## GLBOAL COVARIATES ##
 #######################
 
-if [[ ! -e $COVRED_PATH ]]; then
-    echo "Computing global covariates"
-    mkdir -p $COVRED_PATH
-    if ! Rscript scripts/PREPROCESS/compute_covarred.R; then
-        echo "ERROR: Unable to compute global covariates"
-        cleanup $COVRED_PATH
-        exit 10
-    fi
+echo "Computing global covariates"
+mkdir -p $COVRED_PATH
+if ! Rscript scripts/PREPROCESS/compute_covarred.R; then
+    echo "ERROR: Unable to compute global covariates"
+    cleanup $COVRED_PATH
+    exit 10
 fi
 
 ###########################
 ## PCA OVER FFT FEATURES ##
 ###########################
 
-if [[ ! -e $PCA_TRANS_PATH ]]; then
-    echo "Computing PCA transformation of FFT features"
-    mkdir -p $PCA_TRANS_PATH
-    if ! Rscript scripts/PREPROCESS/compute_pca.R; then
-        echo "ERROR: Unable to compute PCA transformation"
-        cleanup $PCA_TRANS_PATH
-        exit 10
-    fi
+echo "Computing PCA transformation of FFT features"
+mkdir -p $PCA_TRANS_PATH
+if ! Rscript scripts/PREPROCESS/compute_pca.R; then
+    echo "ERROR: Unable to compute PCA transformation"
+    cleanup $PCA_TRANS_PATH
+    exit 10
 fi
 
-if [[ ! -e $FFT_PCA_PATH ]]; then
-    echo "Applying PCA transformation to FFT features"
-    mkdir -p $FFT_PCA_PATH
-    if ! $APRIL_EXEC scripts/PREPROCESS/apply_pca.lua $FFT_PATH $PCA_TRANS_PATH $FFT_PCA_PATH; then
-        echo "ERROR: Unable to apply PCA transformation to FFT data"
-        cleanup $FFT_PCA_PATH
-    fi
+echo "Applying PCA transformation to FFT features"
+mkdir -p $FFT_PCA_PATH
+if ! $APRIL_EXEC scripts/PREPROCESS/apply_pca.lua $FFT_PATH $PCA_TRANS_PATH $FFT_PCA_PATH; then
+    echo "ERROR: Unable to apply PCA transformation to FFT data"
+    cleanup $FFT_PCA_PATH
 fi
 
 ###########################
 ## ICA OVER FFT FEATURES ##
 ###########################
 
-if [[ ! -e $ICA_TRANS_PATH ]]; then
-    echo "Computing ICA transformation of FFT features"
-    mkdir -p $ICA_TRANS_PATH
-    if ! Rscript scripts/PREPROCESS/compute_ica.R; then
-        echo "ERROR: Unable to compute ICA transformation"
-        cleanup $ICA_TRANS_PATH
-        exit 10
-    fi
+echo "Computing ICA transformation of FFT features"
+mkdir -p $ICA_TRANS_PATH
+if ! Rscript scripts/PREPROCESS/compute_ica.R; then
+    echo "ERROR: Unable to compute ICA transformation"
+    cleanup $ICA_TRANS_PATH
+    exit 10
 fi
 
-if [[ ! -e $FFT_ICA_PATH ]]; then
-    echo "Applying ICA transformation to FFT features"
-    mkdir -p $FFT_ICA_PATH
-    if ! $APRIL_EXEC scripts/PREPROCESS/apply_ica.lua $FFT_PATH $ICA_TRANS_PATH $FFT_ICA_PATH; then
-        echo "ERROR: Unable to apply ICA transformation to FFT data"
-        cleanup $FFT_ICA_PATH
-    fi
+echo "Applying ICA transformation to FFT features"
+mkdir -p $FFT_ICA_PATH
+if ! $APRIL_EXEC scripts/PREPROCESS/apply_ica.lua $FFT_PATH $ICA_TRANS_PATH $FFT_ICA_PATH; then
+    echo "ERROR: Unable to apply ICA transformation to FFT data"
+    cleanup $FFT_ICA_PATH
 fi

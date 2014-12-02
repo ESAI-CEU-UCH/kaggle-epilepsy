@@ -25,12 +25,12 @@
 
 . settings.sh
 
-# check competition data is in the proper path
-if [[ ! -e DATA/Dog_1 || ! -e DATA/Dog_2 || ! -e DATA/Dog_3 || ! -e DATA/Dog_4 || ! -e DATA/Dog_5 || ! -e DATA/Patient_1 || ! -e DATA/Patient_2 ]]; then
-    echo "ERROR: Please, download and uncompress all competition data into $ROOT_PATH/DATA"
-    echo "       or just make a symbolic link to directory where data is stored"
-    exit 10
-fi
+## check competition data is in the proper path
+#if [[ ! -e $DATA_PATH/Dog_1 || ! -e $DATA_PATH/Dog_2 || ! -e $DATA_PATH/Dog_3 || ! -e $DATA_PATH/Dog_4 || ! -e $DATA_PATH/Dog_5 || ! -e $DATA_PATH/Patient_1 || ! -e $DATA_PATH/Patient_2 ]]; then
+#    echo "ERROR: Please, download and uncompress all competition data into $ROOT_PATH/DATA"
+#    echo "       or just make a symbolic link to directory where data is stored"
+#    exit 10
+#fi
 
 VERSION=0.4.0
 APRILANN=april-ann-$VERSION
