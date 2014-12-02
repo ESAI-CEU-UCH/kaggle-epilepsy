@@ -1,3 +1,4 @@
+% Fichero con c'odigo metapost
 input metauml;
 
 beginfig(0);
