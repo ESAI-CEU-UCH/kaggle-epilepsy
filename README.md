@@ -26,6 +26,8 @@ This system uses the following open source software:
 - [R project](http://www.r-project.org/) v3.0.2. For statistical computing, a
   wide spread tool in Kaggle competitions. Packages R.matlab, MASS, fda.usc,
   fastICA, stringr and plyr are necessary to run the system.
+- [GNU BASH](http://www.gnu.org/software/bash/) v4.3.11, with find, sort and tr
+  command line tools.
 
 The system is prepared to run in a Linux platform with
 [Ubuntu 14.04 LTS](http://www.ubuntu.com/), but it could run in other Debian

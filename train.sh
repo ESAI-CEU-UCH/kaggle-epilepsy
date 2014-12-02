@@ -232,3 +232,10 @@ if ! bmc_ensemble; then
     cleanup $BMC_ENSEMBLE_RESULT
     exit 10
 fi
+
+cp $BMC_ENSEMBLE_RESULT/test.txt $SUBMISSIONS_PATH/best_ensemble.txt
+cp $ANN5_PCA_CORW_RESULT/test.txt $SUBMISSIONS_PATH/best_simple_model.txt
+
+echo "The submissions are located at:"
+echo "   - $SUBMISSIONS_PATH/best_ensemble.txt our best ensemble submission;"
+echo "   - $SUBMISSIONS_PATH/best_simple_model.txt our best simple model submission."

@@ -327,3 +327,6 @@ if ! bmc_ensemble; then
     cleanup $BMC_ENSEMBLE_RESULT
     exit 10
 fi
+
+echo "The test results for this subject are located at:"
+echo "  - $BMC_ENSEMBLE_RESULT/test.$SUBJECT.txt"
