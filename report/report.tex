@@ -118,8 +118,35 @@ This preprocessing was based in previous competition system of Michael Hills~\ci
 \subsubsection{Windowed correlation
   matrix}\label{windowed-correlation-matrix}
 
+Correlations between the channels for 60\,s windows are calculated and
+the eigenvalues of the correlation were taken as a feature for
+training. Every 10 minutes segment provided in the data set of the
+competition generates 19 subsets of data corresponding to  60\,s
+windows overlapping 30\,s with the former and 30\,s with the next
+subset. This subset corresponds to a matrix whose size is the number
+of channels times the product of the sampling frequency and 60.
+For every subset (60\,s window) the eigenvalues of its correlation
+matrix were calculated and they were stored in a new file in the
+folder \verb@$WINDOWED_COR_PATH@. %$
+ With the former procedure, the number of covariables got is 19 times the number of channel in the individual.  Therefore, the number of features calculated depends on the individual. 
+
+Correlations were also calculated with the FFT transformation of every sequence, but the results were not stable enough.
+
 \subsubsection{Global correlation
   matrix}\label{global-correlation-matrix}
+
+The whole segment in a file provided in the competition was analysed to find correlations between the channels. Not only the original sequence was considered, but a sequence considered of the difference of two consecutive values of the signal. The original sign is a matrix whose size is the number of channels times the product of the frequency sampling and 600. The function eigen and cor in R was applied to this matrix and the output was the eigenvalues of the correlation matrix. The number of eigenvalues is the number of channels for each individuals. 
+
+For each channel signal, a transformed signal is got with the difference between  two consecutive values of the signal.  The correlations of these differentiated signals between the channel form a new features that added to  the correlation of the original signals increase the predictive performance with KNN models. The differentiated signals of a segment is a matrix whose size is the number of channels times the product of the frequency sampling   and 599. Appling eigen and cor function, the eigenvalues of the correlation matrix of these differentiated signal are calculated. 
+
+With these procedure,  the number of features got is  the double of
+number of channels  and they are stored in a new file inside the
+folder \verb@$CORG_PATH@. %$
+
+The main flaw observed is that for human patients the differentiated signal seems to be white noise due to patient data have a higher sampling frequency. We suppose that  the difference of two values in a human signal separated by a lapse of time similar to the dog signals (1/400\,s) could improve the quality of these features.  Nevertheless, being a minor feature, in the final track of the competition we pay attention to the most prominent preprocessing.         
+
+
+
 
 \subsection{Global statistical
   features}\label{global-statistical-features}
