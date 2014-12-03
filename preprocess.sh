@@ -109,6 +109,7 @@ mkdir -p $FFT_PCA_PATH
 if ! $APRIL_EXEC scripts/PREPROCESS/apply_pca.lua $FFT_PATH $PCA_TRANS_PATH $FFT_PCA_PATH; then
     echo "ERROR: Unable to apply PCA transformation to FFT data"
     cleanup $FFT_PCA_PATH
+    exit 10
 fi
 
 ###########################
@@ -128,4 +129,5 @@ mkdir -p $FFT_ICA_PATH
 if ! $APRIL_EXEC scripts/PREPROCESS/apply_ica.lua $FFT_PATH $ICA_TRANS_PATH $FFT_ICA_PATH; then
     echo "ERROR: Unable to apply ICA transformation to FFT data"
     cleanup $FFT_ICA_PATH
+    exit 10
 fi

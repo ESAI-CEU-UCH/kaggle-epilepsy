@@ -54,8 +54,6 @@ if [[ ! -d $DATA_PATH/$SUBJECT ]]; then
     exit 10
 fi
 
-###############################################################################
-
 if ! ./preprocess.sh; then
     exit 10
 fi
@@ -147,10 +145,10 @@ train_knn_covred()
 
 bmc_ensemble()
 {
-    $APRIL_EXEC scripts/ENSEMBLE/bmc_ensemble.lua test.txt \
+    $APRIL_EXEC scripts/ENSEMBLE/bmc_ensemble.lua \
         $ANN2P_PCA_CORW_RESULT $ANN5_PCA_CORW_RESULT $ANN2_ICA_CORW_RESULT \
         $KNN_ICA_CORW_RESULT $KNN_PCA_CORW_RESULT \
-        $KNN_CORG_RESULT $KNN_COVRED_RESULT > $BMC_ENSEMBLE_RESULT/test.$SUBJECT.txt 2> $BMC_ENSEMBLE_RESULT/cv.$SUBJECT.log
+        $KNN_CORG_RESULT $KNN_COVRED_RESULT > $BMC_ENSEMBLE_RESULT/test.$SUBJECT.txt
     return $?
 }
 

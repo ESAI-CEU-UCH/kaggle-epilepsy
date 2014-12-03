@@ -26,19 +26,17 @@
 . settings.sh
 . scripts/configure.sh
 
-MLP_TEST_SCRIPT=scripts/MODELS/test_one_subject_mlp.lua
-KNN_TEST_SCRIPT=scripts/MODELS/test_one_subject_knn.lua
-
-TEST_OUTPUT=$(mktemp --tmpdir=$SUBMISSIONS_PATH/ $test.$subject.XXXXXX.txt)
-BASE=$(basename $TEST_OUTPUT)
-
-###############################################################################
-
 if ! ./preprocess.sh; then
     exit 10
 fi
 
 ###############################################################################
+
+MLP_TEST_SCRIPT=scripts/MODELS/test_one_subject_mlp.lua
+KNN_TEST_SCRIPT=scripts/MODELS/test_one_subject_knn.lua
+
+TEST_OUTPUT=$(mktemp --tmpdir=$SUBMISSIONS_PATH/ $test.$subject.XXXXXX.txt)
+BASE=$(basename $TEST_OUTPUT)
 
 cleanup()
 {
@@ -96,10 +94,7 @@ bmc_ensemble()
 
 ###############################################################################
 
-if [[ ( ! -e $FFT_PCA_PATH ) || ( ! -e $FFT_ICA_PATH ) || ( ! -e $WINDOWED_COR_PATH ) || ( ! -e $CORG_PATH ) || ( ! -e $COVRED_PATH ) ]]; then
-    echo "Execute train.sh before test.sh"
-    exit 10
-fi
+# CHECK TRAINED MODELS
 
 if [[ ! -e $ANN5_PCA_CORW_RESULT ]]; then
     echo "Execute train.sh before test.sh"
@@ -178,6 +173,7 @@ for $subject in $SUBJECTS; do
     
 done
 
+mkdir -p $BMC_ENSEMBLE_RESULT
 if ! bmc_ensemble; then
     cleanup
     exit 10

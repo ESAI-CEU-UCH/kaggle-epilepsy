@@ -41,7 +41,8 @@ KNN_TRAIN_SCRIPT=scripts/MODELS/train_one_subject_knn.lua
 
 cleanup()
 {
-    echo "CLEANING UP, PLEASE WAIT UNTIL FINISH"
+    echo "Has been produced an error :("
+    echo "CLEANING UP, PLEASE WAIT UNTIL FINISH: $@"
     cd $ROOT_PATH
     for dest in "$@"; do
         rm -Rf $dest
@@ -124,10 +125,11 @@ train_knn_covred()
 
 bmc_ensemble()
 {
-    $APRIL_EXEC scripts/ENSEMBLE/bmc_ensemble.lua test.txt \
+    echo "Computing BMC ensemble result"
+    $APRIL_EXEC scripts/ENSEMBLE/bmc_ensemble.lua \
         $ANN2P_PCA_CORW_RESULT $ANN5_PCA_CORW_RESULT $ANN2_ICA_CORW_RESULT \
         $KNN_ICA_CORW_RESULT $KNN_PCA_CORW_RESULT \
-        $KNN_CORG_RESULT $KNN_COVRED_RESULT > $BMC_ENSEMBLE_RESULT/test.txt 2> $BMC_ENSEMBLE_RESULT/cv.log
+        $KNN_CORG_RESULT $KNN_COVRED_RESULT > $BMC_ENSEMBLE_RESULT/test.txt
     return $?
 }
 
