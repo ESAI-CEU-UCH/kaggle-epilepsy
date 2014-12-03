@@ -130,6 +130,23 @@ This preprocessing was based in previous competition system of Michael Hills~\ci
 \subsection{Cross-validation
   algorithm}\label{cross-validation-algorithm}
 
+A cross-validation approach has been followed to compute AUC estimate using
+training data. All models have been trained independently, but using the same
+hyper-parameters and configurations.
+
+The number of folds per subject is the maximum number of full
+sequences\footnote{A full sequence are those where all sequence numbers are
+  available, not all the available sequences are full.} in preictal data. Folds
+are build in such way that all segments in the same sequence are together in
+the same fold. Both, preictal and interictal data has been splitted into the
+same number of folds, and following the same sequence constraint.
+
+For KNNs, cross-validation allows to compute an estimate of the AUC, but the
+final model contains all the available training data.
+
+For ANNs, one model has been trained for each possible partition, and the test
+result is the mean of the output of every model.
+
 \subsection{Models}\label{models}
 
 Different models has been tested. Logistic regression as initial
@@ -138,6 +155,26 @@ introduced in the final system. KNNs for a more sophisticated model. In
 order to exploit non-linear relations in data, dropout ANNs with
 different number of layers and ReLU as neurons. And finally, an ensemble
 of several models has been performed.
+
+\subsubsection{General aspects}
+
+Two different model specifications are possible, depending in the kind of input
+features: global features model and windowed features model. The case of global
+features model is the most simple, correspond to models which input is CORG and
+COVRED features. This model receives as input all the features extracted from
+one segment file, and computes how likely this file is a preictal sample. In
+case of windowed features model, the model receives a file segment splitted
+following a sliding window over temporal axis, and computes how likely every
+window is a precital sample. Once all windows probabilities have been computed,
+preictal probability of the file segment is computed as the complementary of a
+geometric mean:
+
+\begin{equation}
+p(c=\text{preictal} | x) = 1 - \sqrt[n]{\prod_{t=1}^n (1 - p_t)}
+\end{equation}
+
+\noindent where $x$ is a file segment, $p_t$ is the probability of window $t$
+and $n$ is the number of windows.
 
 \subsubsection{K-Nearest Neighbors}\label{k-nearest-neighbors}
 
@@ -179,6 +216,7 @@ This system uses the following open source software:
   computing, a wide spread tool in Kaggle competitions. Packages
   R.matlab, MASS, fda.usc, fastICA, stringr and plyr are necessary to
   run the system.
+\item GNU BASH v4.3.11~\cite{bash} with find, sort and tr command line tools.
 \end{itemize}
 
 The system is prepared to run in a Linux system with Ubuntu 14.04 LTS, but it

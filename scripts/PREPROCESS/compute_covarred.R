@@ -36,6 +36,7 @@ destinationPath <- Sys.getenv("COVRED_PATH")
 ncoefs <- 15 # Number of elements in Fourier basis
 nslices <- 10
 lbase <- 23976
+lbase10 <- 239760
 
 for (subject in subjects) {
     write(paste("#",subject), stdout())
@@ -43,7 +44,7 @@ for (subject in subjects) {
     foreach(i=1:length(files)) %dopar% {
         f <- files[i]
         outname <- paste(destinationPath, "/", substr(f,1,nchar(f)-4), ".txt", sep="")
-        if(!exists(outname)){
+        if(!file.exists(outname)){
             mat <- readMat(paste(sources,subject,f,sep="/"))[[1]]
             sampling.frequency <- round(mat[,,1]$sampling.frequency)
             data <- mat[,,1]$data
@@ -54,14 +55,14 @@ for (subject in subjects) {
             lo1 <- as.integer(L / nslices)
             Aux <- data
             if (lo1 != lbase) {
-                steps <- (1:(lbase*10))*as.integer(lo1/lbase)
-                                        # steps <- seq(from=1, to=L, by=as.integer(sampling.frequency/freqbase))
+                steps <- (1:lbase10)*as.integer(lo1/lbase)
+                # steps <- seq(from=1, to=L, by=as.integer(sampling.frequency/freqbase))
                 Aux <- data[,steps]
             }
             for (chan in 1:nchan) {
                 SDmatrix[chan] <- sd(Aux[chan,])
                 for (t in 1:nslices){
-                    Aux1 <- Aux[chan,(((t-1)*lo1)+1):(t*lo1)]
+                    Aux1 <- Aux[chan,(((t-1)*lbase)+1):(t*lbase)]
                     Aux.coef <- t(fdata2fd(fdata(Aux1),type.basis="fourier",nbasis=ncoefs)$coefs)
                     A1[chan,t,] <- Aux.coef
                 }
@@ -75,7 +76,6 @@ for (subject in subjects) {
             rm(data)
             rm(A1)
             rm(SDmatrix)
-            rm(steps)
             rm(Aux)
             rm(result)
         }

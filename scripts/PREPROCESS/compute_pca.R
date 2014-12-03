@@ -31,26 +31,28 @@ dest <- Sys.getenv("PCA_TRANS_PATH")
 
 for (subject in subjects) {
     write(paste("#",subject), stdout())
-    i=0
-    cols = list()
-    while(TRUE) {
-        i=i+1
-        match <- sprintf("^%s_(.*)ictal(.*)channel_%02d.csv.gz$", subject, i)
-        list <- list.files(path = sources, pattern = match, full.names=TRUE)
-        if (length(list) == 0) break;
-        cols[[i]] <- do.call(cbind, ldply(list, readMatrix))
-    }
-    data <- do.call(cbind, cols)
-    rm(cols)
-    pca <- prcomp(data, scale=TRUE, center=TRUE)
     output.rotation <- paste(dest, "/", subject, "_pca_rotation.txt", sep="")
     output.center <- paste(dest, "/", subject, "_pca_center.txt", sep="")
     output.scale <- paste(dest, "/", subject, "_pca_scale.txt", sep="")
-    write.table(pca$rotation, file = output.rotation,
-                sep = " ", col.names = FALSE, row.names = FALSE)
-    write.table(pca$center, file = output.center,
-                sep = " ", col.names = FALSE, row.names = FALSE)
-    write.table(pca$scale, file = output.scale,
-                sep = " ", col.names = FALSE, row.names = FALSE)
-    rm(data)
+    if (!file.exists(output.rotation) || !file.exists(output.center) || !file.exists(output.scale)) {
+        i=0
+        cols = list()
+        while(TRUE) {
+            i=i+1
+            match <- sprintf("^%s_(.*)ictal(.*)channel_%02d.csv.gz$", subject, i)
+            list <- list.files(path = sources, pattern = match, full.names=TRUE)
+            if (length(list) == 0) break;
+            cols[[i]] <- do.call(cbind, ldply(list, readMatrix))
+        }
+        data <- do.call(cbind, cols)
+        rm(cols)
+        pca <- prcomp(data, scale=TRUE, center=TRUE)
+        write.table(pca$rotation, file = output.rotation,
+                    sep = " ", col.names = FALSE, row.names = FALSE)
+        write.table(pca$center, file = output.center,
+                    sep = " ", col.names = FALSE, row.names = FALSE)
+        write.table(pca$scale, file = output.scale,
+                    sep = " ", col.names = FALSE, row.names = FALSE)
+        rm(data)
+    }
 }

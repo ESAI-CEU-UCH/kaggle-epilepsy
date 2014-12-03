@@ -345,9 +345,13 @@ end
 function common.make_prep_function(HZ,FFT_SIZE,WSIZE,WADVANCE,out_dir,
                                    filter,channels)
   return function(mat_filename)
-    local aux = "%s/%s.channel_%02d.csv.gz" %
-      { out_dir, (mat_filename:basename():gsub("%.mat", "" )), channels }
-    if not common.exists(aux) then
+    local exists = true
+    for i=1,channels do
+      local aux = "%s/%s.channel_%02d.csv.gz" %
+        { out_dir, (mat_filename:basename():gsub("%.mat", "" )), i }
+      if not common.exists(aux) then exists = false break end
+    end
+    if not exists then
       print("#",mat_filename)
       local m,hz,N,seq = common.load_matlab_file(mat_filename)
       collectgarbage("collect")

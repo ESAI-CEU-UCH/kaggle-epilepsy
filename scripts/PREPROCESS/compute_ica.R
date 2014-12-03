@@ -50,43 +50,44 @@ readSet <- function(auxfiles, seg, nlen, nfft, nfilt, nchannels) {
 for (hh in 1:length(subjects)){
     subject <- subjects[hh]
     write(paste("#",subject), stdout())
-    auxfiles <- files[grep(subject,files)]
-
-    trseg <- grep("ictal",auxfiles)
-    
-    nchannels <- length(trseg) / length(grep("channel_01",
-                                             auxfiles[trseg]))
-    
-    ntraining <- length(trseg)/nchannels 
-    
-    tt <- read.table(paste(sources, auxfiles[trseg[1]], sep="/"))
-    nfft <- dim(tt)[1]
-    nfilt <- dim(tt)[2]
-    
-    # Read all training data
-    data <- readSet(auxfiles, trseg, ntraining, nfft, nfilt, nchannels)
-    
-    # Decompose and align by minute all the data
-    data1 <- (apply(apply(data,c(2,1),unlist),1,unlist))
-
-    # Compute centers
-    center <- colMeans(data1)
-    
-    # Compute ICA
-    set.seed(SEED)
-    ica <- fastICA(data1,n.comp=dim(data1)[2],method="C")
-
-    # testica <- scale(datatest1,center=center,scale=FALSE)%*%ica$K%*%ica$W
-
-    # Write transformation matrices
     output.center <- paste(dest, "/", subject, "_ica_center.txt", sep="")
     output.K <- paste(dest, "/", subject, "_ica_K.txt", sep="")
     output.W <- paste(dest, "/", subject, "_ica_W.txt", sep="")
+    if (!file.exists(output.center) || !file.exists(output.K) || !file.exists(output.W)) {
+        auxfiles <- files[grep(subject,files)]
 
-    write.table(center, file = output.center,
-                sep = " ", col.names = FALSE, row.names = FALSE)
-    write.table(ica$K, file = output.K,
-                sep = " ", col.names = FALSE, row.names = FALSE)
-    write.table(ica$W, file = output.W,
-                sep = " ", col.names = FALSE, row.names = FALSE)
+        trseg <- grep("ictal",auxfiles)
+        
+        nchannels <- length(trseg) / length(grep("channel_01",
+                                                 auxfiles[trseg]))
+        
+        ntraining <- length(trseg)/nchannels 
+        
+        tt <- read.table(paste(sources, auxfiles[trseg[1]], sep="/"))
+        nfft <- dim(tt)[1]
+        nfilt <- dim(tt)[2]
+        
+                                        # Read all training data
+        data <- readSet(auxfiles, trseg, ntraining, nfft, nfilt, nchannels)
+        
+                                        # Decompose and align by minute all the data
+        data1 <- (apply(apply(data,c(2,1),unlist),1,unlist))
+
+                                        # Compute centers
+        center <- colMeans(data1)
+        
+                                        # Compute ICA
+        set.seed(SEED)
+        ica <- fastICA(data1,n.comp=dim(data1)[2],method="C")
+
+                                        # testica <- scale(datatest1,center=center,scale=FALSE)%*%ica$K%*%ica$W
+
+                                        # Write transformation matrices
+        write.table(center, file = output.center,
+                    sep = " ", col.names = FALSE, row.names = FALSE)
+        write.table(ica$K, file = output.K,
+                    sep = " ", col.names = FALSE, row.names = FALSE)
+        write.table(ica$W, file = output.W,
+                    sep = " ", col.names = FALSE, row.names = FALSE)
+    }
 }

@@ -53,18 +53,17 @@ for _,subject in ipairs( common.SUBJECTS ) do
   local files = iterator(io.popen("ls %s/%s*channel_01*"%{FFT_DATA_PATH,
                                                           subject}):lines()):table()
   assert(#files > 0, "Error listing files")
-  parallel_foreach(NUM_CORES, files,
-                   function(filename)
-                     collectgarbage("collect")
-                     local mask = filename:gsub("channel_01", "channel_??")
-                     local outname = "%s/%s.txt"%{OUTPUT_PATH,
-                                                  filename:basename():
-                                                    gsub(".channel_.*$","")}
-                     if not common.exists(outname) then
-                       local list = glob(mask)
-                       local m = matrix.join(2, iterator(list):map(read):table())
-                       local out = transform(m)
-                       out:toTabFilename(outname)
-                     end
-  end)
+  for _,filename in ipairs(files) do
+    collectgarbage("collect")
+    local mask = filename:gsub("channel_01", "channel_??")
+    local outname = "%s/%s.txt"%{OUTPUT_PATH,
+                                 filename:basename():
+                                   gsub(".channel_.*$","")}
+    if not common.exists(outname) then
+      local list = glob(mask)
+      local m = matrix.join(2, iterator(list):map(read):table())
+      local out = transform(m)
+      out:toTabFilename(outname)
+    end
+  end
 end
