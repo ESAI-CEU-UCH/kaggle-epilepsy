@@ -14,7 +14,7 @@
 
 %% %% Cabecera - Start %%
 \fancyhf{}
-\fancyhead[LO,RE]{\small \emph{TITLE}}
+\fancyhead[LO,RE]{\small \emph{Seizure prediction system of ESAI-CEU-UCH team}}
 \fancyhead[RO,LE]{}
 \fancyfoot[C]{\bfseries \thepage}
 \renewcommand{\headrulewidth}{0.5pt}  % headrule
@@ -98,14 +98,13 @@ For every file, it is computed a matrix with 19 rows (windows of 60s with 50\%
 overlapping) and $6C$ columns being $C$ the number of channels. This FFT
 transformation has been applied for all the available data, training and test.
 
-A PCA transformation has been computed over the concatenation by rows of
-all training data matrices, leaving test data hidden for this step. Data
-has been centered and scaled before PCA. After computing centers, scales
-and PCA matrix transformation, it has been applied to all the available
-data, training and test. In a similar fashion as for PCA, Indenpendent
-Component Analysis (ICA) has been performed. The advantage of PCA/ICA
-transformation is their ability to remove linear correlations between
-pairs of features.
+A PCA transformation has been computed over the concatenation by rows of all
+training data matrices, leaving test data hidden for this step. Data has been
+centered and scaled before PCA. After computing centers, scales and PCA matrix
+transformation, it has been applied to all the available data, training and
+test. In a similar fashion as for PCA, Indenpendent Component Analysis (ICA) has
+been performed. The advantage of PCA/ICA transformation is their ability to
+remove linear correlations between features.
 
 \subsection{Eigen values of pairwise channels correlation
   matrix}\label{eigen-values-of-pairwise-channels-correlation-matrix}
@@ -225,9 +224,7 @@ above. They achieve a \textbf{0.79335} AUC in private test.
 
 \section{Code description}\label{code-description}
 
-\section{Dependencies}\label{dependencies}
-
-\subsection{Software}\label{software}
+\section{Dependencies and solution recipe}\label{dependencies}
 
 This system uses the following open source software:
 
@@ -240,25 +237,15 @@ This system uses the following open source software:
   computing, a wide spread tool in Kaggle competitions. Packages
   R.matlab, MASS, fda.usc, fastICA, stringr and plyr are necessary to
   run the system.
-\item GNU BASH v4.3.11~\cite{bash} with find, sort and tr command line tools.
+\item GNU BASH v4.3.11~\cite{bash} with standard command line tools.
 \end{itemize}
 
 The system is prepared to run in a Linux system with Ubuntu 14.04 LTS, but it
 can be run in other Debian based distributions, but not tested.
 
-\subsection{Hardware}\label{hardware}
-
-The minimum requirements for the correct execution of this software are:
-
-\begin{itemize}
-\item
-  6GB of RAM.
-\item
-  1.5GB of disk space.
-\end{itemize}
-
-\section{How to generate the
-  solution}\label{how-to-generate-the-solution}
+See the README file at GitHub
+repository\footnote{\url{https://github.com/ESAI-CEU-UCH/kaggle-epilepsy}} for
+deeper information and the solution recipe howto,
 
 \section{Additional comments and
   observations}\label{additional-comments-and-observations}
@@ -339,7 +326,8 @@ model, being one of the following list:
     BMC & ENSEMBLE & 0.9271 & 0.8249\\
     \hline
   \end{tabular}
-  \caption{Cross-validation and public AUC results for the most important systems tested during the competition.\label{tab:val}}
+  \caption{Cross-validation and public AUC results for the most important
+    systems tested during the competition.\label{tab:val}}
 \end{table}            
 
 Table~\ref{tab:val} shows that logistic regression model was the worst in
@@ -355,17 +343,29 @@ ensemble method allow to improve the public AUC in \textbf{0.031} points
 compared to the ANN5 model.
 
 Finally, the private AUC for the two selected models is shown at
-Table~\ref{tab:private}.
+Table~\ref{tab:private}. Note that this table shows private AUC for competition
+system, and private AUC for post-competition system using MKL or ATLAS
+library. As it is indicated in the README at GitHub repository, the competition
+system couldn't be reproduce in an exact way due to a non frozen seed number.
+Now, the code has this number frozen, and its AUC is shown in the table. In
+addition to this problem, our system uses Intel MKL library for best performance
+in experimentation. However, the code is configured by default to compile using
+ATLAS library, which is open source and standard in Linux systems. The
+post-competition private AUC for MKL and ATLAS options are also shown in the
+table for comparison purposes.\footnote{Note that the system hyper-parameters
+  have been optimized using MKL compilation flag, so it is expected worst
+  results compiling with ATLAS library.}
 
 \begin{table}
   \centering
-  \begin{tabular}{|l|r|r|}
+  \begin{tabular}{|l|r|r||r|r|}
     \hline
-    Model & FEATURES & Priv. AUC\\
+          &          & Priv. AUC & \multicolumn{2}{|c|}{Post-competition Priv. AUC}\\
+    Model & FEATURES & MKL & MKL & ATLAS \\
     \hline
     \hline
-    ANN5 & PCA+CORW & 0.7644\\
-    BMC & ENSEMBLE & 0.7935\\
+    ANN5 & PCA+CORW & 0.7644          & 0.7644 & 0.7488\\
+    BMC & ENSEMBLE & \textbf{0.7935}  & 0.7983 & 0.7854\\
     \hline
   \end{tabular}
   \caption{Private AUC for the two selected submissions.\label{tab:private}}
