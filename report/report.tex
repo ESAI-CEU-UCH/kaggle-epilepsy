@@ -64,9 +64,10 @@ reproducibility of the results in a real world implementation.
 \section{Feature selection and
   extraction}\label{feature-selection-and-extraction}
 
-Several preprocessing pipelines have been performed. The  most relevant
-preprocessing technique according to final performance is  FFT plus
-PCA procedure.
+Several preprocessing pipelines have been performed. The most relevant
+preprocessing technique according to final performance is FFT plus PCA
+procedure. This pipeline combines methods implemented in R~\cite{Rproject} and
+others in APRIL-ANN toolkit~\cite{aprilann}.
 
 \subsection{FFT features plus PCA/ICA}\label{fft-features-plus-pcaica}
 
@@ -109,7 +110,8 @@ remove linear correlations between features.
 \subsection{Eigen values of pairwise channels correlation
   matrix}\label{eigen-values-of-pairwise-channels-correlation-matrix}
 
-This preprocessing was based in previous competition system of Michael Hills~\cite{michaelhills}.
+This preprocessing was based in previous competition system of Michael
+Hills~\cite{michaelhills}.
 
 \subsubsection{Windowed correlation
   matrix}\label{windowed-correlation-matrix}
@@ -124,25 +126,44 @@ of channels times the product of the sampling frequency and 60.
 For every subset (60\,s window) the eigenvalues of its correlation
 matrix were calculated and they were stored in a new file in the
 folder \verb@$WINDOWED_COR_PATH@. %$
- With the former procedure, the number of covariables got is 19 times the number of channel in the individual.  Therefore, the number of features calculated depends on the individual. 
+With the former procedure, the number of covariables got is 19 times the number
+of channel in the individual.  Therefore, the number of features calculated
+depends on the individual.
 
-Correlations were also calculated with the FFT transformation of every sequence, but the results were not stable enough.
+Correlations were also calculated with the FFT transformation of every sequence,
+but the results were not stable enough.
 
 \subsubsection{Global correlation
   matrix}\label{global-correlation-matrix}
 
-The whole segment in a file provided in the competition was analysed to find correlations between the channels. Not only the original sequence was considered, but a sequence considered of the difference of two consecutive values of the signal. The original sign is a matrix whose size is the number of channels times the product of the frequency sampling and 600. The function eigen and cor in R was applied to this matrix and the output was the eigenvalues of the correlation matrix. The number of eigenvalues is the number of channels for each individuals. 
+The whole segment in a file provided in the competition was analysed to find
+correlations between the channels. Not only the original sequence was
+considered, but a sequence considered of the difference of two consecutive
+values of the signal. The original sign is a matrix whose size is the number of
+channels times the product of the frequency sampling and 600. The function eigen
+and cor in R was applied to this matrix and the output was the eigenvalues of
+the correlation matrix. The number of eigenvalues is the number of channels for
+each individuals.
 
-For each channel signal, a transformed signal is got with the difference between  two consecutive values of the signal.  The correlations of these differentiated signals between the channel form a new features that added to  the correlation of the original signals increase the predictive performance with KNN models. The differentiated signals of a segment is a matrix whose size is the number of channels times the product of the frequency sampling   and 599. Appling eigen and cor function, the eigenvalues of the correlation matrix of these differentiated signal are calculated. 
+For each channel signal, a transformed signal is got with the difference between
+two consecutive values of the signal.  The correlations of these differentiated
+signals between the channel form a new features that added to the correlation of
+the original signals increase the predictive performance with
+K-Nearest-Neighbor (KNN) models. The differentiated signals of a segment is a matrix
+whose size is the number of channels times the product of the frequency sampling
+and 599. Appling eigen and cor function, the eigenvalues of the correlation
+matrix of these differentiated signal are calculated.
 
-With these procedure,  the number of features got is  the double of
-number of channels  and they are stored in a new file inside the
-folder \verb@$CORG_PATH@. %$
+With these procedure, the number of features got is the double of number of
+channels and they are stored in a new file inside the folder
+\verb@$CORG_PATH@. %$
 
-The main flaw observed is that for human patients the differentiated signal seems to be white noise due to patient data have a higher sampling frequency. We suppose that  the difference of two values in a human signal separated by a lapse of time similar to the dog signals (1/400\,s) could improve the quality of these features.  Nevertheless, being a minor feature, in the final track of the competition we pay attention to the most prominent preprocessing.         
-
-
-
+The main flaw observed is that for human patients the differentiated signal
+seems to be white noise due to patient data have a higher sampling frequency. We
+suppose that the difference of two values in a human signal separated by a lapse
+of time similar to the dog signals (1/400\,s) could improve the quality of these
+features.  Nevertheless, being a minor feature, in the final track of the
+competition we pay attention to the most prominent preprocessing.
 
 \subsection{Global statistical
   features}\label{global-statistical-features}
@@ -167,17 +188,18 @@ same number of folds, and following the same sequence constraint.
 For KNNs, cross-validation allows to compute an estimate of the AUC, but the
 final model contains all the available training data.
 
-For ANNs, one model has been trained for each possible partition, and the test
-result is the mean of the output of every model.
+For Artificial Neural Networks (ANNs), one model has been trained for each
+possible partition, and the test result is the mean of the output of every
+model.
 
 \subsection{Models}\label{models}
 
-Different models has been tested. Logistic regression as initial
-baseline following a simple linear regression approach, which was not
-introduced in the final system. KNNs for a more sophisticated model. In
-order to exploit non-linear relations in data, dropout ANNs with
-different number of layers and ReLU as neurons. And finally, an ensemble
-of several models has been performed.
+Different models has been tested in APRIl-ANN toolkit. Logistic regression as
+initial baseline following a simple linear regression approach, which was not
+introduced in the final system. KNNs for a more sophisticated model. In order to
+exploit non-linear relations in data, dropout ANNs with different number of
+layers and ReLU as neurons. And finally, an ensemble of several models has been
+performed.
 
 \subsubsection{General aspects}
 
@@ -194,15 +216,61 @@ geometric mean:
 
 \begin{equation}
 p(c=\text{preictal} | x) = 1 - \sqrt[n]{\prod_{t=1}^n (1 - p_t)}
+\label{eq:gmean}
 \end{equation}
 
 \noindent where $x$ is a file segment, $p_t$ is the probability of window $t$
-and $n$ is the number of windows.
+and $n$ is the number of windows. Different aggregation methods, as arithmetic
+mean, maximum or harmonic mean, were tested achieving similar or worst results.
 
 \subsubsection{K-Nearest Neighbors}\label{k-nearest-neighbors}
 
+KNN models were choose after convergence problems with logistic regression
+models. KNNs are non-parametric and don't need to be trained, training data is
+the model. The parameter number of neighbors has been set to $K=40$ after trying
+different values and looking into cross-validation and public AUC scores. The
+KNN hypotheses were transformed into probabilities following the implementation
+given in APRIL-ANN toolkit, which is based
+in~\cite{2005:nips:hinton:NCA}. Probability of preictal class is computed
+following:
+
+\begin{equation}
+p(c=\text{preictal} | s) =
+\displaystyle{\frac{\displaystyle{\sum_{ s^\prime \in \text{preictal}(\mathcal{K}) } exp( -||s - s^\prime||^2_2 ) }}
+{\displaystyle{\sum_{s^\prime \in \mathcal{K}} exp( -||s - s^\prime||^2_2 ) }}}
+\end{equation}
+
+\noindent where $s$ is an input sample\footnote{It can be a global feature
+  vector computed over the whole segment file, or a temporal window taken from
+  the file.}, $\mathcal{K}$ is the set of hypoteses given by the KNN,
+$\text{preictal}(\mathcal{K})$ is a subset of $\mathcal{K}$ containing only
+samples belonging to preictal class. The value of $K$ and the computation of
+probabilities using distances allow to reduce the impact of overfitting in the
+KNN model.
+
 \subsubsection{Artificial Neural
   Networks}\label{artificial-neural-networks}
+
+ANN models with different hyper-parameters were tested, but in a non exhaustive
+way because of the large gap between cross-validation AUC and public test
+AUC. Overfitting effect was reduced by introducing a 50\%
+dropout~\cite{2012:arxiv:hinton:dropout} in all hidden layers and a Gaussian
+additive noise with mean $0$ and variance $0.04$ in the inputs. All proposed
+ANNs have ReLU~\cite{2011:glorot:aistats} as activation functions in all hidden
+layers, and logistic activation function at the output layer. Training was
+performed by stochastic gradient descent with mini-batches (bunch size) of 128
+samples and minimizing the cross-entropy loss function. Validation loss was also
+cross-entropy but after aggregating all the probabilities computed for each
+segment file following the Equation~(\ref{eq:gmean}). The input of the ANN was
+extended taking into account three windows (the current, the previous one and
+the following), allowing to capture temporal patterns in data. The learning rate
+was set to $0.2$ with a decay parameter of $0.001$, momentum was set to $0.1$
+and no other regularization term has been used. ANN weights were initialized
+sampling from an uniform distribution in range $[-3,3]$.
+
+Different hyper-parameters, including L1 and L2 regularization were tested without
+good results. Again, it is important to take into account that all this
+hyper-parameters were selected in a non-exhaustive way.
 
 \subsubsection{Ensemble of models}\label{ensemble-of-models}
 
@@ -264,8 +332,8 @@ of the following:
 \item ANN: Artificial Neural Networks with 50\% dropout and
   ReLU~\cite{2011:glorot:aistats} neurons, 128 units in every hidden layer, and
   a logistic activation function at the output.  ANN2 for two hidden layers,
-  ANN2p for two hidden layers with 64 units in every layer, ANN3 for three
-  hidden layers, and so on.
+  ANN3 for three hidden layers, and so on. ANN2p for two hidden layers with 64
+  units in every layer,
 \item
   UNIFORM or BMC: ensemble of the most promising systems, indicated in
   bold face. UNIFORM is a linear combination with uniformly distributed
@@ -298,7 +366,7 @@ model, being one of the following list:
 
 \begin{table}
   \centering
-  \begin{tabular}{|l|r|rr|}
+  \begin{tabular}{|l|l|cc|}
     \hline
     Model & Features & CV AUC & Pub. AUC\\
     \hline
@@ -358,17 +426,18 @@ table for comparison purposes.\footnote{Note that the system hyper-parameters
 
 \begin{table}
   \centering
-  \begin{tabular}{|l|r|r||r|r|}
+  \begin{tabular}{|l|l|c||c|c|}
     \hline
-          &          & Priv. AUC & \multicolumn{2}{|c|}{Post-competition Priv. AUC}\\
-    Model & FEATURES & MKL & MKL & ATLAS \\
+          &          & Priv. AUC & \multicolumn{2}{|c|}{Post. priv. AUC}\\
+    Model & FEATURES & MKL & \multicolumn{1}{|c}{MKL} & \multicolumn{1}{c|}{ATLAS} \\
     \hline
     \hline
     ANN5 & PCA+CORW & 0.7644          & 0.7644 & 0.7488\\
     BMC & ENSEMBLE & \textbf{0.7935}  & 0.7983 & 0.7854\\
     \hline
   \end{tabular}
-  \caption{Private AUC for the two selected submissions.\label{tab:private}}
+  \caption{Private AUC for the two selected submissions. Post. priv. AUC refers
+    to AUC results in private test after the competition.\label{tab:private}}
 \end{table}
 
 The private AUC of the BMC ensemble is the second best if we compare it
