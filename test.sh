@@ -59,7 +59,8 @@ test_subject()
     fft=$4
     cor=$5
     mkdir -p $model.TEST
-    $APRIL_EXEC $script $model $subject $model.TEST/validation_$subject.test.txt $fft $cor
+    $APRIL_EXEC $script $model $subject $model.TEST/validation_$subject.test.txt $fft $cor &&
+    cp -f $model/validation_$subject.txt $model.TEST/
     return $?
 }
 
@@ -179,5 +180,4 @@ if ! bmc_ensemble $TEST_OUTPUT; then
     exit 10
 fi
 
-echo "The result is located at:"
-echo "   - $test_output our best ensemble submission."
+echo "The BMC ensemble result is located at $TEST_OUTPUT"

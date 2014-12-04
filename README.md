@@ -26,8 +26,8 @@ This system uses the following open source software:
 - [R project](http://www.r-project.org/) v3.0.2. For statistical computing, a
   wide spread tool in Kaggle competitions. Packages R.matlab, MASS, fda.usc,
   fastICA, stringr and plyr are necessary to run the system.
-- [GNU BASH](http://www.gnu.org/software/bash/) v4.3.11, with find, sort and tr
-  command line tools.
+- [GNU BASH](http://www.gnu.org/software/bash/) v4.3.11, with cp, mv, find,
+  mktemp, sort and tr command line tools.
 
 The system is prepared to run in a Linux platform with
 [Ubuntu 14.04 LTS](http://www.ubuntu.com/), but it could run in other Debian
@@ -36,8 +36,8 @@ based distributions, but not tested.
 Additionally, APRIL-ANN toolkit has been compiled using the
 [Intel MKL library](https://software.intel.com/en-us/intel-mkl), and it is
 needed to ensure reproducibility of ANN models in the solution. However, the
-delivered code revision uses by default ATLAS library, which is standard in
-Linux systems.
+delivered code revision uses by default ATLAS library, which is open source
+and standard in Linux systems.
 
 ## Hardware
 
