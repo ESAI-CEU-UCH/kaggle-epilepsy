@@ -100,10 +100,10 @@ overlapping) and $6C$ columns being $C$ the number of channels. This FFT
 transformation has been applied for all the available data, training and test.
 
 A PCA transformation has been computed over the concatenation by rows of all
-training data matrices, leaving test data hidden for this step. Data has been
+training data matrices, leaving test data hidden for this step. Data have been
 centered and scaled before PCA. After computing centers, scales and PCA matrix
 transformation, it has been applied to all the available data, training and
-test. In a similar fashion as for PCA, Indenpendent Component Analysis (ICA) has
+test. In a similar fashion to PCA, Independent Component Analysis (ICA) has
 been performed. The advantage of PCA/ICA transformation is their ability to
 remove linear correlations between features.
 
@@ -188,8 +188,8 @@ hyper-parameters and configurations.
 The number of folds per subject is the maximum number of full
 sequences\footnote{A full sequence are those where all sequence numbers are
   available, not all the available sequences are full.} in preictal data. Folds
-are build in such way that all segments in the same sequence are together in
-the same fold. Both, preictal and interictal data has been splitted into the
+are build in such way that all segments in the same sequence belong to
+the same fold. Both, preictal and interictal data have been splitted into the
 same number of folds, and following the same sequence constraint.
 
 For KNNs, cross-validation allows to compute an estimate of the AUC, but the
@@ -201,7 +201,7 @@ model.
 
 \subsection{Models}\label{models}
 
-Different models has been tested in APRIl-ANN toolkit. Logistic regression as
+Different models have been tested in APRIl-ANN toolkit. Logistic regression as
 initial baseline following a simple linear regression approach, which was not
 introduced in the final system. KNNs for a more sophisticated model. In order to
 exploit non-linear relations in data, dropout ANNs with different number of
@@ -210,9 +210,9 @@ performed.
 
 \subsubsection{General aspects}
 
-Two different model specifications are possible, depending in the kind of input
+Two different model specifications are possible, depending on the kind of input
 features: global features model and windowed features model. The case of global
-features model is the most simple, correspond to models which input is CORG and
+features model is the most simple, correspond to models which inputs are CORG and
 COVRED features. This model receives as input all the features extracted from
 one segment file, and computes how likely this file is a preictal sample. In
 case of windowed features model, the model receives a file segment splitted
@@ -232,13 +232,13 @@ mean, maximum or harmonic mean, were tested achieving similar or worst results.
 
 \subsubsection{K-Nearest Neighbors}\label{k-nearest-neighbors}
 
-KNN models were choose after convergence problems with logistic regression
+KNN models were chosen after convergence problems with logistic regression
 models. KNNs are non-parametric and don't need to be trained, training data is
 the model. The parameter number of neighbors has been set to $K=40$ after trying
 different values and looking into cross-validation and public AUC scores. The
 KNN hypotheses were transformed into probabilities following the implementation
 given in APRIL-ANN toolkit, which is based
-in~\cite{2005:nips:hinton:NCA}. Probability of preictal class is computed
+on~\cite{2005:nips:hinton:NCA}. Probability of preictal class is computed
 following:
 
 \begin{equation}
@@ -276,7 +276,7 @@ and no other regularization term has been used. ANN weights were initialized
 sampling from an uniform distribution in range $[-3,3]$.
 
 Different hyper-parameters, including L1 and L2 regularization were tested without
-good results. Again, it is important to take into account that all this
+good results. Again, it is important to take into account that all these
 hyper-parameters were selected in a non-exhaustive way.
 
 \subsubsection{Ensemble of models}\label{ensemble-of-models}
@@ -326,7 +326,7 @@ deeper information and the solution recipe howto,
   observations}\label{additional-comments-and-observations}
 
 Among the indicated as submitted best system, different models and
-features combinations has been tested. Table~\ref{tab:val} summarizes
+features combinations have been tested. Table~\ref{tab:val} summarizes
 the cross-validation AUC and public test AUC for the most important
 combinations. In Table~\ref{tab:val} first column contains the model, being one
 of the following:
@@ -406,7 +406,7 @@ model, being one of the following list:
 \end{table}            
 
 Table~\ref{tab:val} shows that logistic regression model was the worst in
-terms of generalization abiltiy. The application of PCA allows to
+terms of generalization ability. The application of PCA allows to
 improve the public AUC results by \textbf{0.025} for KNN model and
 \textbf{0.033} for ANN model. ICA obtains improvements similar to PCA.
 The advantage of deep ANNs (with more than two hidden layers) is not
@@ -423,7 +423,7 @@ system, and private AUC for post-competition system using MKL or ATLAS
 library. As it is indicated in the README at GitHub repository, the competition
 system couldn't be reproduce in an exact way due to a non frozen seed number.
 Now, the code has this number frozen, and its AUC is shown in the table. In
-addition to this problem, our system uses Intel MKL library for best performance
+addition to this problem, our system uses Intel MKL library for the best performance
 in experimentation. However, the code is configured by default to compile using
 ATLAS library, which is open source and standard in Linux systems. The
 post-competition private AUC for MKL and ATLAS options are also shown in the
