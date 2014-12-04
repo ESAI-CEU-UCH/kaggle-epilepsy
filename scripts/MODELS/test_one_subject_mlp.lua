@@ -33,7 +33,7 @@ local subject = assert(arg[2], "Needs a subject name as second argument")
 local test = assert(arg[3], "Needs an output test result filename as third argument")
 local FFT = arg[4]
 local COR = arg[5]
-io.open(test, "w"):close()
+assert(io.open(test, "w"), "Unable to open " .. test):close()
 ---------------------------------------------------------------------------
 local model_table = loadfile("%s/%s.net"%{model_path,subject})()
 local means,devs = table.unpack( loadfile("%s/%s_standarization.lua"%
