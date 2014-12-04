@@ -33,8 +33,8 @@ The system is prepared to run in a Linux platform with
 [Ubuntu 14.04 LTS](http://www.ubuntu.com/), but it could run in other Debian
 based distributions, but not tested.
 
-Additionally, APRIL-ANN toolkit has been compiled using the Intel MKL
-library\footnote{\url{https://software.intel.com/en-us/intel-mkl}}, and it is
+Additionally, APRIL-ANN toolkit has been compiled using the
+[Intel MKL library](https://software.intel.com/en-us/intel-mkl), and it is
 needed to ensure reproducibility of ANN models in the solution. However, the
 delivered code revision uses by default ATLAS library, which is standard in
 Linux systems.
@@ -153,5 +153,5 @@ $ ./train_subject.sh SUBJECT_NAME
 
 - ICA uses test centers for test, instead of training centers.
 - Contextualized windows for ANNs are computed in a wrong way.
-- MKL library is needed to produce exact results of ANN models.
+- Intel MKL library is needed to produce exact results of ANN models.
 - ICA seed was frozen after competition.
