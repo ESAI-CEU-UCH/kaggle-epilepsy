@@ -39,7 +39,7 @@ for _,subject in ipairs( common.SUBJECTS ) do
   print("# " .. subject)
   local center = read("%s/%s_ica_center.txt"%{ICA_DATA_PATH, subject})
   local center2 = read("%s/%s_ica_center2.txt"%{ICA_DATA_PATH, subject})
-  assert(center ~= center2)
+  assert((center-center2):abs():sum() > 0.0)
   local K = read("%s/%s_ica_K.txt"%{ICA_DATA_PATH, subject})
   local W = read("%s/%s_ica_W.txt"%{ICA_DATA_PATH, subject})
   center = center:rewrap(center:size())

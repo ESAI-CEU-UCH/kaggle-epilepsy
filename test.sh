@@ -35,7 +35,7 @@ fi
 MLP_TEST_SCRIPT=scripts/MODELS/test_one_subject_mlp.lua
 KNN_TEST_SCRIPT=scripts/MODELS/test_one_subject_knn.lua
 
-TEST_OUTPUT=$(mktemp --tmpdir=$SUBMISSIONS_PATH/ $test.$subject.XXXXXX.txt)
+TEST_OUTPUT=$(mktemp --tmpdir=$SUBMISSIONS_PATH/ test.XXXXXX.txt)
 BASE=$(basename $TEST_OUTPUT)
 
 cleanup()

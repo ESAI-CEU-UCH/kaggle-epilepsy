@@ -60,7 +60,7 @@ for (subject in subjects) {
                 Aux <- data[,steps]
             }
             for (chan in 1:nchan) {
-                SDmatrix[chan] <- sd(Aux[chan,])
+                SDmatrix[chan] <- sd(data[chan,]) # without resampling
                 for (t in 1:nslices){
                     Aux1 <- Aux[chan,(((t-1)*lbase)+1):(t*lbase)]
                     Aux.coef <- t(fdata2fd(fdata(Aux1),type.basis="fourier",nbasis=ncoefs)$coefs)
