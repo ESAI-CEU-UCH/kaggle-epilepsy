@@ -33,6 +33,12 @@ The system is prepared to run in a Linux platform with
 [Ubuntu 14.04 LTS](http://www.ubuntu.com/), but it could run in other Debian
 based distributions, but not tested.
 
+Additionally, APRIL-ANN toolkit has been compiled using the Intel MKL
+library\footnote{\url{https://software.intel.com/en-us/intel-mkl}}, and it is
+needed to ensure reproducibility of ANN models in the solution. However, the
+delivered code revision uses by default ATLAS library, which is standard in
+Linux systems.
+
 ## Hardware
 
 The minimum requirements for the correct execution of this software are:
@@ -62,11 +68,20 @@ of data and result folders:
 - `MODELS_PATH=MODELS` indicates the folder where models training and results
   are stored.
 - `SUBMISSIONS_PATH=SUBMISSIONS` indicates where test results will be generated.
+- `USE_MKL=0` change this flag to indicate that you want to compile APRIl-ANN
+  using Intel MKL library.
 
 All other environment variables are computed depending in this three root paths.
 Note that all the system must be executed being in the root path of the git
 repository. The list of available subjects depends in the subfolders of
 `DATA_PATH`.
+
+## Reproducibility issues
+
+Besides the MKL dependency of APRIL-ANN toolkit, the final submission of this
+system is not possible to be reproduced due to a problem with random seeds of
+ICA transformation. The seed has been frozen during code revision, but not for
+the Kaggle competition.
 
 ## Recipe to reproduce the solution
 
@@ -133,3 +148,10 @@ $ ./train_subject.sh SUBJECT_NAME
 
 
 ## Recipe to test new data for a trained subject
+
+# Known problems
+
+- ICA uses test centers for test, instead of training centers.
+- Contextualized windows for ANNs are computed in a wrong way.
+- MKL library is needed to produce exact results of ANN models.
+- ICA seed was frozen after competition.

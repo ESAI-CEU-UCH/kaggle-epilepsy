@@ -135,10 +135,8 @@ bmc_ensemble()
 
 ###############################################################################
 
-if [[ ( ! -e $FFT_PCA_PATH ) || ( ! -e $FFT_ICA_PATH ) || ( ! -e $WINDOWED_COR_PATH ) || ( ! -e $CORG_PATH ) || ( ! -e $COVRED_PATH ) ]]; then
-    if ! ./preprocess.sh; then
-        exit 10
-    fi
+if ! ./preprocess.sh; then
+    exit 10
 fi
 
 ###################

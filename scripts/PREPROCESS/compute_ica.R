@@ -24,7 +24,7 @@
 library(fastICA)
 library(stringr)
 
-SEED <- 4283247 # 37442
+SEED <- 37442
 subjects <- c(unlist(strsplit(Sys.getenv("SUBJECTS"), " ")))
 sources <- Sys.getenv("FFT_PATH")
 files <- dir(sources)
@@ -51,9 +51,11 @@ for (hh in 1:length(subjects)){
     subject <- subjects[hh]
     write(paste("#",subject), stdout())
     output.center <- paste(dest, "/", subject, "_ica_center.txt", sep="")
+    output.center2 <- paste(dest, "/", subject, "_ica_center2.txt", sep="")
     output.K <- paste(dest, "/", subject, "_ica_K.txt", sep="")
     output.W <- paste(dest, "/", subject, "_ica_W.txt", sep="")
-    if (!file.exists(output.center) || !file.exists(output.K) || !file.exists(output.W)) {
+    if (!file.exists(output.center) || !file.exists(output.K) ||
+        !file.exists(output.W) || !file.exists(output.center2) ) {
         auxfiles <- files[grep(subject,files)]
 
         trseg <- grep("ictal",auxfiles)
@@ -89,5 +91,12 @@ for (hh in 1:length(subjects)){
                     sep = " ", col.names = FALSE, row.names = FALSE)
         write.table(ica$W, file = output.W,
                     sep = " ", col.names = FALSE, row.names = FALSE)
+
+        # BUG: we used centers of test instead of training in Kaggle submission
+        testseg <- grep("test",auxfiles)
+        data2 <- readSet(auxfiles, testseg, length(testseg)/nchannels, nfft, nfilt, nchannels)
+        center2 <- colMeans( (apply(apply(data2,c(2,1),unlist),1,unlist)) )
+        write.table(center2, file = output.center2,
+                    sep = " ", col.names = FALSE, row.names = FALSE)        
     }
 }

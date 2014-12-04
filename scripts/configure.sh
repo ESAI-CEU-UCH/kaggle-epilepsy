@@ -90,10 +90,18 @@ if [[ -z $APRIL_EXEC || $APRIL_EXEC = "" || ! -e $APRIL_EXEC ]]; then
             exit 10
         fi
         . configure.sh
-        if ! make release-atlas; then
-            echo "ERROR: Unable to compile APRIL-ANN :'("
-            cleanup
-            exit 10
+        if [[ $USE_MKL == 0 ]]; then
+            if ! make release-atlas; then
+                echo "ERROR: Unable to compile APRIL-ANN :'("
+                cleanup
+                exit 10
+            fi
+        else
+            if ! make; then
+                echo "ERROR: Unable to compile APRIL-ANN :'("
+                cleanup
+                exit 10
+            fi
         fi
         if ! make test; then
             echo "ERROR: Unable to test APRIL-ANN :'("

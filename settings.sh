@@ -6,6 +6,8 @@ export TMP_PATH=TMP
 export MODELS_PATH=MODELS
 # Submissions results path
 export SUBMISSIONS_PATH=SUBMISSIONS
+# Indicate if compiling with MKL or not
+export USE_MKL=0
 # Change this if you want verbose output during training
 export VERBOSE_TRAIN=0
 # The following parameters are fore intermediate results
