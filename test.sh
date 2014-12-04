@@ -86,6 +86,7 @@ test_knn()
 
 bmc_ensemble()
 {
+    echo "Computing BMC ensemble result"
     $APRIL_EXEC scripts/ENSEMBLE/bmc_ensemble.lua \
         $ANN2P_PCA_CORW_RESULT.TEST $ANN5_PCA_CORW_RESULT.TEST $ANN2_ICA_CORW_RESULT.TEST \
         $KNN_ICA_CORW_RESULT.TEST $KNN_PCA_CORW_RESULT.TEST \
