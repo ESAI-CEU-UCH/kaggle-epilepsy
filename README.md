@@ -173,7 +173,8 @@ the pattern `test.XXXXXX.txt` and output folder `$SUBMISSIONS_PATH/`.
 
 # Known problems
 
-- Contextualized windows for ANNs are computed in a wrong way.
+- Contextualized windows for ANNs have a minor bug.
 - Intel MKL library is needed to produce exact results of ANN models.
 - ICA uses test centers for test, instead of training centers.
-- ICA seed was frozen after competition.
+- ICA seed was frozen after competition, so competition system is not
+  exactly reproducible.
