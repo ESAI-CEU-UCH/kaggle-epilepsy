@@ -46,7 +46,7 @@ mkdir -p $TMP_PATH
 . scripts/configure.sh
 
 # overwrite SUBJECTS variable to contain only one subject
-SUBJECTS=$1
+export SUBJECTS=$1
 SUBJECT=$1
 
 if [[ ! -d $DATA_PATH/$SUBJECT ]]; then

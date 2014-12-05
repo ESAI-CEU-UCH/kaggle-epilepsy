@@ -11,7 +11,9 @@ export USE_MKL=0
 # Change this if you want verbose output during training
 export VERBOSE_TRAIN=0
 # The following parameters are fore intermediate results
-export SUBJECTS=$(find $DATA_PATH/ -mindepth 1 -maxdepth 1 -type d -exec basename {} ";" | sort | tr '\n' ' ')
+if [[ -z $SUBJECTS ]]; then
+    export SUBJECTS=$(find $DATA_PATH/ -mindepth 1 -maxdepth 1 -type d -exec basename {} ";" | sort | tr '\n' ' ')
+fi
 export ROOT_PATH=$(pwd)
 export LISTS_PATH=$TMP_PATH/lists
 export SEQUENCES_PATH=$TMP_PATH/SEQUENCES.txt

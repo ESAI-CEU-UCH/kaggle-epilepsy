@@ -28,7 +28,7 @@ local common = {}
 -- load environment configuration into commont table
 iterator(io.lines("settings.sh")):
 apply(function(line)
-      local k=line:match("^export ([^%s]+)%s*=.*$")
+      local k=line:match("^%s*export ([^%s]+)%s*=.*$")
       if k then
         local v=april_assert(os.getenv(k), "%s %s %s",
                              "Unable to load environment variables, please check",

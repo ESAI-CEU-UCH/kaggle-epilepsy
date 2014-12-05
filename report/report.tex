@@ -10,11 +10,18 @@
 \usepackage{calc}
 \usepackage{anysize}
 \usepackage{url}
-\marginsize{3.5cm}{3cm}{3.5cm}{3.5cm}
+\usepackage{hyperref}
+\usepackage{libertine}
+\usepackage[libertine]{newtxmath}
+
+\marginsize{3cm}{3cm}{3cm}{3cm}
+
+%\renewcommand{\familydefault}{\sfdefault}
 
 %% %% Cabecera - Start %%
 \fancyhf{}
-\fancyhead[LO,RE]{\small \emph{Seizure prediction system of ESAI-CEU-UCH team}}
+\fancyhead[LO]{\small Seizure prediction system of ESAI-CEU-UCH team}
+\fancyhead[RE]{\small F. Zamora-Martínez, F.J. Muñoz-Almaraz, P. Botella-Rocamora, J. Pardo}
 \fancyhead[RO,LE]{}
 \fancyfoot[C]{\bfseries \thepage}
 \renewcommand{\headrulewidth}{0.5pt}  % headrule
@@ -27,11 +34,11 @@
 \newcommand{\argmax}{\mathop{\mbox{argmax}}}
 
 % \name{}
-\author{Francisco Zamora Martínez, Francisco J. Mu\~noz--Almaraz,\\
-  Paloma Botella--Rocamora, Juan Pardo}
+\author{Francisco Zamora-Martínez, Francisco J. Muñoz-Almaraz,\\
+  Paloma Botella-Rocamora, Juan Pardo}
 \date{November 2014}
 % \address{}
-\title{Seizure prediction using FFT, eigen values of correlation matrix,
+\title{\ Seizure prediction using FFT, eigen values of correlation matrix,
   artificial neural networks, k-nearest-neighbors and Bayesian model combination}
 
 \begin{document}
@@ -47,14 +54,13 @@
 
 \section{Summary}\label{summary}
 
-This work presents the system proposed by Universidad CEU Cardenal
-Herrera (ESAI-CEU-UCH) at Kaggle American Epilepsy Society Seizure
-Prediction Challenge. The proposed system was positioned as \textbf{4th}
-at Kaggle American Epilepsy Society Seizure Prediction Challenge~\cite{kaggle}.
-
-Different kind of input features (different preprocessing pipelines) and
-different statistical models are being proposed. This diversity was motivated to
-improve model combination result.
+This report presents the system proposed by Universidad CEU Cardenal Herrera
+(ESAI-CEU-UCH team) at Kaggle American Epilepsy Society Seizure Prediction
+Challenge. The proposed system was positioned as \textbf{4th} at Kaggle
+leaderboard~\cite{kaggle}. Different kind of input features (different
+preprocessing pipelines) and different statistical models are being
+proposed. This diversity was motivated to allow model combination to improve the
+result.
 
 It is important to note that none of the proposed systems use test set
 for any calibration or related purpose. The competition rules allow to do this
@@ -82,10 +88,10 @@ file~\cite{2014:howbert:plosone}:
   We obtained 19 windows for every input file. Every sample is filtered
   by using Hamming windows.
 \item
-  For every window, real FFT is computed using an algorithm which needs
-  power of two window sizes, so, 60s input windows are of 24\,000 for Dogs
-  and 300\,000 for Patients, leading into 16384 FFT bins for Dogs and
-  262144 FFT for Patients.
+  For every window, real FFT is computed using an algorithm which needs power of
+  two window sizes. The 60s input window has 24\,000 samples for Dogs and
+  300\,000 samples for Patients, leading into 16\,384 FFT bins for Dogs and
+  262\,144 FFT for Patients.
 \item A filter bank is computed for bands: delta (0.1Hz --- 4Hz), theta (4Hz ---
   8Hz), alpha (8Hz --- 12Hz), beta (12Hz --- 30Hz), low-gamma (30Hz --- 70Hz),
   high-gamma (70Hz --- 180Hz). The mean in the corresponding frequency bands has
@@ -95,17 +101,20 @@ file~\cite{2014:howbert:plosone}:
   of the values.
 \end{enumerate}
 
-For every file, it is computed a matrix with 19 rows (windows of 60s with 50\%
-overlapping) and $6C$ columns being $C$ the number of channels. This FFT
-transformation has been applied for all the available data, training and test.
+For every file, this FFT preprocess computes a matrix with 19 rows (windows of
+60s with 50\% overlapping) and $6C$ columns being $C$ the number of
+channels. This transformation has been applied to all the available data
+(training and test).
 
 A PCA transformation has been computed over the concatenation by rows of all
-training data matrices, leaving test data hidden for this step. Data have been
-centered and scaled before PCA. After computing centers, scales and PCA matrix
-transformation, it has been applied to all the available data, training and
-test. In a similar fashion to PCA, Independent Component Analysis (ICA) has
-been performed. The advantage of PCA/ICA transformation is their ability to
-remove linear correlations between features.
+training data matrices (ignoring test data). Data have been centered and scaled
+before PCA. After computing centers, scales and PCA matrix transformation, them
+have been applied to all the available data (training and test). In a similar
+fashion to PCA, Independent Component Analysis (ICA) has been performed. The
+advantage of PCA/ICA transformation is their ability to remove linear
+correlations between features.\footnote{ICA transformation needs a random number
+  generator and the seed was random during competition, so it is not possible to
+  reproduce exactly the competition result.}
 
 \subsection{Eigen values of pairwise channels correlation
   matrix}\label{eigen-values-of-pairwise-channels-correlation-matrix}
@@ -117,21 +126,20 @@ Hills~\cite{michaelhills}.
   matrix}\label{windowed-correlation-matrix}
 
 Correlations between the channels with windows covering 60\,s are calculated and
-the eigenvalues of the correlation matrix are taken as  features for
-training with KNN and ANN models (see
-section~\ref{k-nearest-neighbors} and
-\ref{artificial-neural-networks}). 
-Every 10 minutes segment provided in the competition data set generates 19 signal subintervals whose lapse is  60\,s
-overlapping 30\,s with the previous and the posterior subintervals.
-Each subinterval corresponds to a data set that consists in  a matrix whose size is the number
-of channels times the product of the sampling frequency and 60.
-For every subinterval (window covering 60\,s) the eigenvalues of its correlation
-matrix are calculated and  stored in a new file in the
-folder \verb@$WINDOWED_COR_PATH@. %$
-With the former procedure, the number of covariables got is 19 times the number
-of channel in the individual.  Therefore, the number of features is
-different 
-depending on the individual.
+the eigenvalues of the correlation matrix are taken as features for training
+with KNN and ANN models (see Section~\ref{modelling-techniques-and-training}).
+Every 10 minutes segment provided in the competition data set generates 19
+signal subintervals whose lapse is 60\,s overlapping 30\,s with the previous and
+the posterior subintervals.  Each subinterval corresponds to a data set that
+consists in a matrix whose size is the number of channels times the product of
+the sampling frequency and 60.  For every subinterval (window covering 60\,s)
+the eigenvalues of its correlation matrix are calculated and stored in a new
+file. With the former procedure, the number of covariables got is 19 times the
+number of channel in the individual.  Therefore, the number of features is
+different depending on the individual. This features jointly with FFT (with and
+without PCA/ICA transformation) were used as inputs, and it will be denoted as:
+FFT+CORW, PCA+CORW, ICA+CORW.\footnote{PCA/ICA transformation is only applied to
+  FFT features, not to CORW features.}
 
 Correlations were also calculated with the FFT transformation of every
 sequence described in section~\ref{fft-features-plus-pcaica},
@@ -140,30 +148,28 @@ but the results were not stable enough.
 \subsubsection{Global correlation
   matrix}\label{global-correlation-matrix}
 
-The whole segment in a segment provided in the competition is analysed to find
-correlations between channels.  The set of features  got with with
-analysis was used with KNN models for training.
- Not only is considered the original signal in the
-sequence, but also a differentiated  signal consisting in the difference of two consecutive
-values of the original signal. The original signal is a matrix whose size is the number of
-channels times the product of the frequency sampling and 600. The functions \verb@eigen@
-and \verb@cor@ in R are applied to this matrix and the output are the eigenvalues of
-the correlation matrix. The number of eigenvalues is equal to the number of channels for
-each individuals.
+A whole segment file provided in the competition is analysed to find
+correlations between channels.  The set of features got with this analysis was
+used with KNN models for training.  Not only is considered the original signal
+in the sequence, but also a differentiated signal consisting in the difference
+of two consecutive values of the original signal. The original signal is a
+matrix whose size is the number of channels times the product of the frequency
+sampling and 600. The functions \verb@eigen@ and \verb@cor@ in R are applied to
+this matrix and the output are the eigenvalues of the correlation matrix. The
+number of eigenvalues is equal to the number of channels for each individuals.
 
 For each channel signal, a transformed signal is got with the difference between
 two consecutive values of the signal.  The correlations of these differentiated
-signals form  new features that added to the correlation of
-the original signals increase the predictive performance with
-K-Nearest-Neighbor (KNN) models. The differentiated signals of a segment is a matrix
-whose size is the number of channels times the product of the frequency sampling
-and 599. Applying \verb@eigen@ and \verb@cor@ functions, the eigenvalues of the correlation
-matrix of these differentiated signals are calculated.
+signals form new features that added to the correlation of the original signals
+increase the predictive performance with K-Nearest-Neighbor (KNN) models. The
+differentiated signals of a segment is a matrix whose size is the number of
+channels times the product of the frequency sampling and 599. Applying
+\verb@eigen@ and \verb@cor@ functions, the eigenvalues of the correlation matrix
+of these differentiated signals are calculated.
 
-With these procedures, the number of features got is the double of
-the number of
-channels and they are stored in a new file inside the folder
-\verb@$CORG_PATH@. %$
+With these procedures, the number of features got is the double of the number of
+channels and they are stored in a new file. This feature will be denoted as CORG
+in the following.
 
 The main flaw observed is that for human patients the differentiated signal
 does not provide information due to patient data have a higher sampling frequency. We
@@ -174,6 +180,20 @@ competition we pay more attention to the most prominent preprocessing.
 
 \subsection{Global statistical
   features}\label{global-statistical-features}
+
+Exploratory analysis of original data showed different behavior in the signal
+variability of both classes, pre-ictal and inter-ictal. Standard deviation were
+calculated for every data set in every channel.  Following the study of
+discriminant statistical features, a fourier basis representation (with 15
+elements) was calculated for every data set. Exploratory analysis on their
+coefficients showed different behavior between pre-ictal and inter-ictal
+series. Pre-ictal signals coefficients displayed lower coefficients (closer to
+0) while inter-ictal signals coefficients presented greater disparity between
+them. As a summary measure of this behavior, standard deviation of these
+coefficients was calculated for each data serie, once per channel, and the mean
+standard deviation was calculated for all channels to reduce the dimensionality
+and avoid redundant information. This feature will be denoted as COVRED in the
+following.
 
 \section{Modelling techniques and
   training}\label{modelling-techniques-and-training}
@@ -187,71 +207,68 @@ hyper-parameters and configurations.
 
 The number of folds per subject is the maximum number of full
 sequences\footnote{A full sequence are those where all sequence numbers are
-  available, not all the available sequences are full.} in preictal data. Folds
-are build in such way that all segments in the same sequence belong to
-the same fold. Both, preictal and interictal data have been splitted into the
-same number of folds, and following the same sequence constraint.
-
-For KNNs, cross-validation allows to compute an estimate of the AUC, but the
-final model contains all the available training data.
-
-For Artificial Neural Networks (ANNs), one model has been trained for each
-possible partition, and the test result is the mean of the output of every
-model.
+  available, not all the available sequences are full.} in pre-ictal data. Folds
+are build in such way that all segments in the same sequence belong to the same
+fold. Both, pre-ictal and inter-ictal data have been splitted into the same
+number of folds, and following the same sequence constraint.  For KNNs,
+cross-validation allows to compute an estimate of the AUC, but the final model
+contains all the available training data.  For Artificial Neural Networks
+(ANNs), one model has been trained for each possible partition, and the test
+result is the mean of every model output.
 
 \subsection{Models}\label{models}
 
 Different models have been tested in APRIl-ANN toolkit. Logistic regression as
 initial baseline following a simple linear regression approach, which was not
-introduced in the final system. KNNs for a more sophisticated model. In order to
-exploit non-linear relations in data, dropout ANNs with different number of
-layers and ReLU as neurons. And finally, an ensemble of several models has been
-performed.
+introduced in the final system due to convergence problems.  In order to exploit
+non-linear relations in data, KNNs and dropout ANNs with different number of
+layers and ReLU as neurons have been trained. And finally, an ensemble of
+several models has been performed.
 
 \subsubsection{General aspects}
 
 Two different model specifications are possible, depending on the kind of input
 features: global features model and windowed features model. The case of global
-features model is the most simple, correspond to models which inputs are CORG and
-COVRED features. This model receives as input all the features extracted from
-one segment file, and computes how likely this file is a preictal sample. In
+features model is the most simple, correspond to models whose inputs are CORG and
+COVRED features. The model receives as input all the features extracted from
+one segment file, and computes how likely this file is a pre-ictal sample. In
 case of windowed features model, the model receives a file segment splitted
 following a sliding window over temporal axis, and computes how likely every
 window is a precital sample. Once all windows probabilities have been computed,
-preictal probability of the file segment is computed as the complementary of a
-geometric mean:
+pre-ictal probability of the file segment is computed as the complementary of the
+geometric mean of inter-ictal probability:
 
 \begin{equation}
-p(c=\text{preictal} | x) = 1 - \sqrt[n]{\prod_{t=1}^n (1 - p_t)}
+p(c=\text{pre-ictal} | x) = 1 - \sqrt[n]{\prod_{t=1}^n (1 - p_t)}
 \label{eq:gmean}
 \end{equation}
 
-\noindent where $x$ is a file segment, $p_t$ is the probability of window $t$
-and $n$ is the number of windows. Different aggregation methods, as arithmetic
-mean, maximum or harmonic mean, were tested achieving similar or worst results.
+\noindent where $x$ is a file segment, $n$ is the number of time windows in $x$
+and $p_t$ is the pre-ictal probability of window $t$. Different aggregation
+methods, as arithmetic mean, maximum or harmonic mean, were tested achieving
+similar or worst results.
 
 \subsubsection{K-Nearest Neighbors}\label{k-nearest-neighbors}
 
 KNN models were chosen after convergence problems with logistic regression
-models. KNNs are non-parametric and don't need to be trained, training data is
-the model. The parameter number of neighbors has been set to $K=40$ after trying
-different values and looking into cross-validation and public AUC scores. The
-KNN hypotheses were transformed into probabilities following the implementation
-given in APRIL-ANN toolkit, which is based
-on~\cite{2005:nips:hinton:NCA}. Probability of preictal class is computed
-following:
+models. KNNs are non-parametric and don't need to be trained because training
+data is the model. The number of neighbors hyper-parameter has been set to
+$K=40$ after trying different values and looking into cross-validation and
+public AUC scores. The KNN hypotheses were transformed into probabilities
+following the implementation given in APRIL-ANN toolkit, which is based
+on~\cite{2005:nips:hinton:NCA}:
 
 \begin{equation}
-p(c=\text{preictal} | s) =
-\displaystyle{\frac{\displaystyle{\sum_{ s^\prime \in \text{preictal}(\mathcal{K}) } exp( -||s - s^\prime||^2_2 ) }}
+p(c=\text{pre-ictal} | s) =
+\displaystyle{\frac{\displaystyle{\sum_{ s^\prime \in \text{pre-ictal}(\mathcal{K}) } exp( -||s - s^\prime||^2_2 ) }}
 {\displaystyle{\sum_{s^\prime \in \mathcal{K}} exp( -||s - s^\prime||^2_2 ) }}}
 \end{equation}
 
 \noindent where $s$ is an input sample\footnote{It can be a global feature
   vector computed over the whole segment file, or a temporal window taken from
   the file.}, $\mathcal{K}$ is the set of hypoteses given by the KNN,
-$\text{preictal}(\mathcal{K})$ is a subset of $\mathcal{K}$ containing only
-samples belonging to preictal class. The value of $K$ and the computation of
+$\text{pre-ictal}(\mathcal{K})$ is a subset of $\mathcal{K}$ containing only
+samples belonging to pre-ictal class. The value of $K$ and the computation of
 probabilities using distances allow to reduce the impact of overfitting in the
 KNN model.
 
@@ -271,9 +288,17 @@ cross-entropy but after aggregating all the probabilities computed for each
 segment file following the Equation~(\ref{eq:gmean}). The input of the ANN was
 extended taking into account three windows (the current, the previous one and
 the following), allowing to capture temporal patterns in data. The learning rate
-was set to $0.2$ with a decay parameter of $0.001$, momentum was set to $0.1$
-and no other regularization term has been used. ANN weights were initialized
-sampling from an uniform distribution in range $[-3,3]$.
+was set to $\eta_0=0.2$ with a decay parameter of $\epsilon=0.001$, momentum was
+set to $\gamma=0.1$ and no other regularization term has been used. ANN weights
+were initialized sampling from a uniform distribution in range $[-3,3]$. One
+weight $w$ at iteration $t+1$ is computed following:
+
+\begin{eqnarray}
+\eta &=& \frac{\eta_0}{1 + \epsilon t}\\
+w^{(t+1)} &=& w^{(t)} - \eta \frac{\partial L}{\partial w^{(t)}} + \gamma ( w^{(t)} - w^{(t-1)} )
+\end{eqnarray}
+
+\noindent being $L$ the cross-entropy loss of the mini-batch.
 
 Different hyper-parameters, including L1 and L2 regularization were tested without
 good results. Again, it is important to take into account that all these
@@ -283,31 +308,28 @@ hyper-parameters were selected in a non-exhaustive way.
 
 All the proposed models have been trained independently, computing
 cross-validation probabilities for every training file, and test output
-submission file.
-
+submission file, and the final system is a combination of these outputs.
 Initially, a simple uniform linear combination of probability outputs in
 submission files has been tested. In order to improve this result, a Bayesian
 Model Combination (BMC) algorithm~\cite{2011:monteith:ijcnn} has been
 implemented in Lua for APRIL-ANN~\cite{aprilann} toolkit. BMC algorithm uses
-cross-validation output probabilities to optimize the combination weights, and
-uses these weights to combine output probabilities in submission files.
+cross-validation output probabilities to optimize the likelihood of the
+combination, and uses these weights to combine output probabilities in
+submission files.
 
 \subsection{Results}\label{results}
 
-The best submitted model is the combination of the described models
-above. They achieve a \textbf{0.79335} AUC in private test.
-
-\section{Code description}\label{code-description}
+The best submitted model is the BMC ensemble of the described models
+above. They achieved a \textbf{0.7935} AUC in private test.
 
 \section{Dependencies and solution recipe}\label{dependencies}
 
 This system uses the following open source software:
 
 \begin{itemize}
-\item APRIL-ANN toolkit v0.4.0~\cite{aprilann}.
-  It is a toolkit for pattern recognition with Lua and C/C++ core.
-  Because this tool is very new, the installation and configuration has
-  been written in the pipeline.
+\item APRIL-ANN toolkit v0.4.0~\cite{aprilann}. It is a toolkit for pattern
+  recognition with Lua scripting and a C/C++ core.  Because this tool is very
+  new, the installation and configuration has been written in the pipeline.
 \item R project v3.0.2~\cite{Rproject}. For statistical
   computing, a wide spread tool in Kaggle competitions. Packages
   R.matlab, MASS, fda.usc, fastICA, stringr and plyr are necessary to
@@ -321,6 +343,93 @@ can be run in other Debian based distributions, but not tested.
 See the README file at GitHub
 repository\footnote{\url{https://github.com/ESAI-CEU-UCH/kaggle-epilepsy}} for
 deeper information and the solution recipe howto,
+
+\section{Code description}\label{code-description}
+
+The code is a bunch of different scripts for APRIL-ANN and R, plus bash-scripts
+for the recipe automation. The folder \verb+scripts/+ contains the different
+programs, which have been organized depending in their purpose.
+
+The following scripts are for configuration and common functions:
+
+\begin{itemize}
+\item \verb+scripts/configure.sh+: is a bash-script which downloads APRIL-ANN,
+  install dependencies, and compiles it using ATLAS library by default.
+\item \verb+scripts/configure.R+: is an R script which install the needed
+  R packages at the user home folder.
+\item \verb+scripts/cmd.lua+: contains Lua code for APRIL-ANN with command
+  line options of the training scripts.
+\item \verb+scripts/common.lua+: contains Lua code for APRIL-ANN with several
+  functions which were shared between different preprocessing and training
+  programs.
+\end{itemize}
+
+The following ones are for preprocessing:
+
+\begin{itemize}
+\item \verb+scripts/PREPROCESS/compute_fft.lua+: is a Lua script for APRIL-ANN
+  which computes the FFT preprocess, before PCA/ICA transformation, indicated at
+  Section~\ref{fft-features-plus-pcaica}.
+\item \verb+scripts/PREPROCESS/compute_pca.R+: is an R script which computes
+  PCA transformation matrices: rotation, center and scale matrices.
+\item \verb+scripts/PREPROCESS/compute_ica.R+: is an R script which computes ICA
+  transformation matrices: rotation, center and scale matrices.
+\item \verb+scripts/PREPROCESS/apply_pca.lua+: is a Lua script for APRIL-ANN
+  which takes the PCA transformation matrices and computes PCA rotation of all
+  data.
+\item \verb+scripts/PREPROCESS/apply_ica.lua+: is a Lua script for APRIL-ANN
+  which takes the ICA transformation matrices and computes ICA of all data.
+\item \verb+scripts/PREPROCESS/correlation_60s_30s.R+: is a R script which
+  computes windowed correlation matrix as described at
+  Section~\ref{windowed-correlation-matrix}.
+\item \verb+scripts/PREPROCESS/compute_corg.R+: is a R script which computes
+  global correlation matrix as described at
+  Section~\ref{global-correlation-matrix}.
+\item \verb+scripts/PREPROCESS/compute_covarred.R+: is a R script which computes
+  global statistical features as described at
+  Section~\ref{global-statistical-features}.
+\end{itemize}
+
+\noindent Note that this preprocessing scripts produces intermediary output
+results in disk storage.
+
+The following are for training+testing:
+
+\begin{itemize}
+\item \verb+scripts/MODELS/train_one_subject_knn.lua+: is a Lua script for
+  APRIL-ANN which computes cross-validation results for KNN model and produces
+  the test outputs. This script has a lot of configuration options, the most
+  promising where selected during competition and frozen in the solution at
+  \verb+scripts/MODELS/confs/knn*.lua+.
+\item \verb+scripts/MODELS/train_one_subject_mlp.lua+: is a Lua script for
+  APRIL-ANN which trains a MLP following the cross-validation scheme and
+  produces its outputs. This script has a lot of configuration options, the most
+  promising where selected during competition and frozen in the solution at
+  \verb+scripts/MODELS/confs/ann*.lua+.
+\item \verb+scripts/MODELS/train_all_subjects_wrapper.lua+: is a Lua script for
+  APRIL-ANN which takes one of the two above scripts and trains the model for
+  all the available subjects, producing the submission for Kaggle.
+\end{itemize}
+
+The following are for models ensemble:
+
+\begin{itemize}
+\item \verb+scripts/ENSEMBLE/naive_ensemble.lua+: is a Lua script for
+  APRIL-ANN which implements an uniform linear combination of several test
+  outputs.
+\item \verb+scripts/ENSEMBLE/bmc_ensemble.lua+: is a Lua script for APRIL-ANN
+  which implements BMC ensemble for models trained following the
+  cross-validation scheme, and produces the corresponding test output.
+\end{itemize}
+
+The following are only for testing:
+
+\begin{itemize}
+\item \verb+scripts/MODELS/test_one_subject_knn.lua+: is a Lua script for
+  APRIL-ANN which computes test results for a KNN model and one subject.
+\item \verb+scripts/MODELS/test_one_subject_mlp.lua+: is a Lua script for
+  APRIL-ANN which computes test results for a MLP model and one subject.
+\end{itemize}
 
 \section{Additional comments and
   observations}\label{additional-comments-and-observations}
