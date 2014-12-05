@@ -81,13 +81,6 @@ Note that all the system must be executed being in the root path of the git
 repository. The list of available subjects depends in the subfolders of
 `DATA_PATH`.
 
-## Reproducibility issues
-
-Besides the MKL dependency of APRIL-ANN toolkit, the final submission of this
-system is not possible to be reproduced due to a problem with random seeds of
-ICA transformation. The seed has been frozen during code revision, but not for
-the Kaggle competition.
-
 ## Recipe to reproduce the solution
 
 It is possible to train and test two selected submissions by executing the
@@ -174,6 +167,6 @@ the pattern `test.XXXXXX.txt` and output folder `$SUBMISSIONS_PATH/`.
 # Known problems
 
 - Contextualized windows for ANNs have a minor bug.
-- ICA uses test centers for test, instead of training centers.
+- For error, ICA uses test centers for test, instead of training centers.
 - ICA seed was frozen after competition, so competition system is not
   exactly reproducible.
