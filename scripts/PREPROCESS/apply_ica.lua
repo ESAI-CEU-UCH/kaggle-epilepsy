@@ -38,14 +38,11 @@ local pca_data = {}
 for _,subject in ipairs( common.SUBJECTS ) do
   print("# " .. subject)
   local center = read("%s/%s_ica_center.txt"%{ICA_DATA_PATH, subject})
-  local center2 = read("%s/%s_ica_center2.txt"%{ICA_DATA_PATH, subject})
-  assert((center-center2):abs():sum() > 0.0)
   local K = read("%s/%s_ica_K.txt"%{ICA_DATA_PATH, subject})
   local W = read("%s/%s_ica_W.txt"%{ICA_DATA_PATH, subject})
   center = center:rewrap(center:size())
-  center2 = center2:rewrap(center2:size())
   --
-  local transform = function(x, center)
+  local transform = function(x)
     for _,x_row in matrix.ext.iterate(x, 1) do x_row[{}] = (x_row - center) end
     return x * K * W
   end
@@ -62,7 +59,7 @@ for _,subject in ipairs( common.SUBJECTS ) do
     if not common.exists(outname) then
       local list = glob(mask)
       local m = matrix.join(2, iterator(list):map(read):table())
-      local out = transform(m, outname:find("ictal") and center or center2)
+      local out = transform(m)
       out:toTabFilename(outname)
     end
   end

@@ -51,11 +51,10 @@ for (hh in 1:length(subjects)){
     subject <- subjects[hh]
     write(paste("#",subject), stdout())
     output.center <- paste(dest, "/", subject, "_ica_center.txt", sep="")
-    output.center2 <- paste(dest, "/", subject, "_ica_center2.txt", sep="")
     output.K <- paste(dest, "/", subject, "_ica_K.txt", sep="")
     output.W <- paste(dest, "/", subject, "_ica_W.txt", sep="")
     if (!file.exists(output.center) || !file.exists(output.K) ||
-        !file.exists(output.W) || !file.exists(output.center2) ) {
+        !file.exists(output.W)) {
         auxfiles <- files[grep(subject,files)]
 
         trseg <- grep("ictal",auxfiles)
@@ -82,8 +81,6 @@ for (hh in 1:length(subjects)){
         set.seed(SEED)
         ica <- fastICA(data1,n.comp=dim(data1)[2],method="C")
 
-                                        # testica <- scale(datatest1,center=center,scale=FALSE)%*%ica$K%*%ica$W
-
                                         # Write transformation matrices
         write.table(center, file = output.center,
                     sep = " ", col.names = FALSE, row.names = FALSE)
@@ -92,11 +89,5 @@ for (hh in 1:length(subjects)){
         write.table(ica$W, file = output.W,
                     sep = " ", col.names = FALSE, row.names = FALSE)
 
-        # BUG: we used centers of test instead of training in Kaggle submission
-        testseg <- grep("test",auxfiles)
-        data2 <- readSet(auxfiles, testseg, length(testseg)/nchannels, nfft, nfilt, nchannels)
-        center2 <- colMeans( (apply(apply(data2,c(2,1),unlist),1,unlist)) )
-        write.table(center2, file = output.center2,
-                    sep = " ", col.names = FALSE, row.names = FALSE)        
     }
 }

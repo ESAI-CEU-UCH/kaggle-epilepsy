@@ -475,7 +475,7 @@ function common.load_data(path,mask,params)
           mat_tbl[#mat_tbl + 1] = matrix.read(f,
                                               { [matrix.options.tab]   = true,
                                                 [matrix.options.ncols] = ncols,
-                                                [matrix.options.nrows] = nrows, })
+                                                [matrix.options.nrows] = nrows })
                      end,
         "Error happened loading %s"%{filename})
       f:close()
@@ -492,7 +492,7 @@ function common.load_data(path,mask,params)
             mat_tbl[#mat_tbl + 1] = matrix.read(f,
                                                 { [matrix.options.tab]   = true,
                                                   [matrix.options.ncols] = ncols,
-                                                  [matrix.options.nrows] = nrows, })
+                                                  [matrix.options.nrows] = nrows })
                        end,
           "Error happened loading %s"%{filename})
         f:close()
@@ -512,26 +512,29 @@ function common.load_data(path,mask,params)
       for i=1,nrows do labels[#labels + 1] = label end
     end
   end -- for path in list
-  -- join by rows all the loaded matrices
-  local input_mat = matrix.join(1, input_mat_tbl)
+  -- input dataset table contains the contextualized input samples
+  local in_ds_tbl = {}
+  for _,m in ipairs(input_mat_tbl) do
+    local in_ds = dataset.matrix(m)
+    if context and context > 0 then
+      in_ds = dataset.contextualizer(in_ds, context, context)
+    end
+    in_ds_tbl[#in_ds_tbl+1] = in_ds
+  end
+  -- union of all input data
+  local in_ds = dataset.union(in_ds_tbl)
   -- sanity checks
-  assert(input_mat:dim(1) == #input_mat_tbl * nrows)
+  assert(in_ds:numPatterns() == #input_mat_tbl * nrows)
   if #labels > 0 then assert(#labels == input_mat:dim(1)) end
-  -- build a dataset with all the input matrix
-  local in_ds = dataset.matrix(input_mat)
+  -- load correlations if needed
   if params.cor then
     -- if correlation features are available, load them recursively
     local cors = common.load_data(params.cor, mask, { no_channels = true,
-                                                      SUBJECT = params.SUBJECT })
+                                                      SUBJECT = params.SUBJECT,
+                                                      context = context })
     assert(in_ds:numPatterns() == cors.input_dataset:numPatterns())
     -- join both set of features
     in_ds = dataset.join{ in_ds, cors.input_dataset }
-  end
-  if context then
-    -- BUG: we are building contextualized input which mixes the rows in
-    -- boundaries of the matrices, it is not an important BUG, but some noise
-    -- may be introduced into training.
-    in_ds = dataset.contextualizer(in_ds, context, context)
   end
   -- return a table with input and output datasets, and the list of loaded
   -- filenames
