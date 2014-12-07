@@ -206,7 +206,7 @@ training data. All models have been trained independently, but using the same
 hyper-parameters and configurations.
 
 The number of folds per subject is the maximum number of full
-sequences\footnote{A full sequence are those where all sequence numbers are
+sequences\footnote{A full sequence are those were all sequence numbers are
   available, not all the available sequences are full.} in pre-ictal data. Folds
 are build in such way that all segments in the same sequence belong to the same
 fold. Both, pre-ictal and inter-ictal data have been splitted into the same
@@ -399,12 +399,12 @@ The following are for training+testing:
 \item \verb+scripts/MODELS/train_one_subject_knn.lua+: is a Lua script for
   APRIL-ANN which computes cross-validation results for KNN model and produces
   the test outputs. This script has a lot of configuration options, the most
-  promising where selected during competition and frozen in the solution at
+  promising were selected during competition and frozen in the solution at
   \verb+scripts/MODELS/confs/knn*.lua+.
 \item \verb+scripts/MODELS/train_one_subject_mlp.lua+: is a Lua script for
   APRIL-ANN which trains a MLP following the cross-validation scheme and
   produces its outputs. This script has a lot of configuration options, the most
-  promising where selected during competition and frozen in the solution at
+  promising were selected during competition and frozen in the solution at
   \verb+scripts/MODELS/confs/ann*.lua+.
 \item \verb+scripts/MODELS/train_all_subjects_wrapper.lua+: is a Lua script for
   APRIL-ANN which takes one of the two above scripts and trains the model for
