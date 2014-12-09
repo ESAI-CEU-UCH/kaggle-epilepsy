@@ -87,8 +87,9 @@ test_knn()
 bmc_ensemble()
 {
     echo "Computing BMC ensemble result"
+    ## REMOVED FROM V1.0 $ANN2P_PCA_CORW_RESULT.TEST $ANN5_PCA_CORW_RESULT.TEST
     $APRIL_EXEC scripts/ENSEMBLE/bmc_ensemble.lua \
-        $ANN2P_PCA_CORW_RESULT.TEST $ANN5_PCA_CORW_RESULT.TEST $ANN2_ICA_CORW_RESULT.TEST \
+        $ANN2_ICA_CORW_RESULT.TEST \
         $KNN_ICA_CORW_RESULT.TEST $KNN_PCA_CORW_RESULT.TEST \
         $KNN_CORG_RESULT.TEST $KNN_COVRED_RESULT.TEST > $1
     return $?
@@ -98,15 +99,17 @@ bmc_ensemble()
 
 # CHECK TRAINED MODELS
 
-if [[ ! -e $ANN5_PCA_CORW_RESULT ]]; then
-    echo "Execute train.sh before test.sh"
-    exit 10
-fi
-
-if [[ ! -e $ANN2P_PCA_CORW_RESULT ]]; then
-    echo "Execute train.sh before test.sh"
-    exit 10
-fi
+# REMOVED FROM V1.0
+#
+# if [[ ! -e $ANN5_PCA_CORW_RESULT ]]; then
+#     echo "Execute train.sh before test.sh"
+#     exit 10
+# fi
+#
+# if [[ ! -e $ANN2P_PCA_CORW_RESULT ]]; then
+#     echo "Execute train.sh before test.sh"
+#     exit 10
+# fi
 
 if [[ ! -e $ANN2_ICA_CORW_RESULT ]]; then
     echo "Execute train.sh before test.sh"
@@ -138,15 +141,17 @@ fi
 for subject in $SUBJECTS; do
     echo "# $subject"
     
-    if ! test_mlp $ANN5_PCA_CORW_RESULT $subject $FFT_PCA_PATH $WINDOWED_COR_PATH; then
-        cleanup
-        exit 10
-    fi
-
-    if ! test_mlp $ANN2P_PCA_CORW_RESULT $subject $FFT_PCA_PATH $WINDOWED_COR_PATH; then
-        cleanup
-        exit 10
-    fi
+    # REMOVED FROM V1.0
+    #
+    # if ! test_mlp $ANN5_PCA_CORW_RESULT $subject $FFT_PCA_PATH $WINDOWED_COR_PATH; then
+    #     cleanup
+    #     exit 10
+    # fi
+    #
+    # if ! test_mlp $ANN2P_PCA_CORW_RESULT $subject $FFT_PCA_PATH $WINDOWED_COR_PATH; then
+    #     cleanup
+    #     exit 10
+    # fi
     
     if ! test_mlp $ANN2_ICA_CORW_RESULT $subject $FFT_ICA_PATH $WINDOWED_COR_PATH; then
         cleanup

@@ -126,8 +126,9 @@ train_knn_covred()
 bmc_ensemble()
 {
     echo "Computing BMC ensemble result"
+    ## REMOVED FROM V1.0 $ANN2P_PCA_CORW_RESULT $ANN5_PCA_CORW_RESULT \
     $APRIL_EXEC scripts/ENSEMBLE/bmc_ensemble.lua \
-        $ANN2P_PCA_CORW_RESULT $ANN5_PCA_CORW_RESULT $ANN2_ICA_CORW_RESULT \
+        $ANN2_ICA_CORW_RESULT \
         $KNN_ICA_CORW_RESULT $KNN_PCA_CORW_RESULT \
         $KNN_CORG_RESULT $KNN_COVRED_RESULT > $BMC_ENSEMBLE_RESULT/test.txt
     return $?
@@ -139,29 +140,31 @@ if ! ./preprocess.sh; then
     exit 10
 fi
 
-###################
-## ANN5 PCA+CORW ##
-###################
-
-if [[ ! -e $ANN5_PCA_CORW_RESULT ]]; then
-    mkdir -p $ANN5_PCA_CORW_RESULT
-    if ! train_mlp_pca $ANN5_PCA_CORW_CONF $ANN5_PCA_CORW_RESULT; then
-        cleanup $ANN5_PCA_CORW_RESULT
-	exit 10
-    fi
-fi
-
-####################
-## ANN2p PCA+CORW ##
-####################
-
-if [[ ! -e $ANN2P_PCA_CORW_RESULT ]]; then
-    mkdir -p $ANN2P_PCA_CORW_RESULT
-    if ! train_mlp_pca $ANN2P_PCA_CORW_CONF $ANN2P_PCA_CORW_RESULT; then
-        cleanup $ANN2P_PCA_CORW_RESULT
-	exit 10
-    fi
-fi
+# REMOVED FROM V1.0
+#
+# ###################
+# ## ANN5 PCA+CORW ##
+# ###################
+#
+# if [[ ! -e $ANN5_PCA_CORW_RESULT ]]; then
+#     mkdir -p $ANN5_PCA_CORW_RESULT
+#     if ! train_mlp_pca $ANN5_PCA_CORW_CONF $ANN5_PCA_CORW_RESULT; then
+#         cleanup $ANN5_PCA_CORW_RESULT
+# 	exit 10
+#     fi
+# fi
+#
+# ####################
+# ## ANN2p PCA+CORW ##
+# ####################
+#
+# if [[ ! -e $ANN2P_PCA_CORW_RESULT ]]; then
+#     mkdir -p $ANN2P_PCA_CORW_RESULT
+#     if ! train_mlp_pca $ANN2P_PCA_CORW_CONF $ANN2P_PCA_CORW_RESULT; then
+#         cleanup $ANN2P_PCA_CORW_RESULT
+# 	exit 10
+#     fi
+# fi
 
 ###################
 ## ANN2 ICA+CORW ##
@@ -234,7 +237,7 @@ if ! bmc_ensemble; then
 fi
 
 cp $BMC_ENSEMBLE_RESULT/test.txt $SUBMISSIONS_PATH/best_ensemble.txt
-cp $ANN5_PCA_CORW_RESULT/test.txt $SUBMISSIONS_PATH/best_simple_model.txt
+cp $ANN2_ICA_CORW_RESULT/test.txt $SUBMISSIONS_PATH/best_simple_model.txt
 
 echo "The submissions are located at:"
 echo "   - $SUBMISSIONS_PATH/best_ensemble.txt our best ensemble submission;"

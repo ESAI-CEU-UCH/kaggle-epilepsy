@@ -145,8 +145,9 @@ train_knn_covred()
 
 bmc_ensemble()
 {
+    ## REMOVED FROM V1.0 $ANN2P_PCA_CORW_RESULT $ANN5_PCA_CORW_RESULT
     $APRIL_EXEC scripts/ENSEMBLE/bmc_ensemble.lua \
-        $ANN2P_PCA_CORW_RESULT $ANN5_PCA_CORW_RESULT $ANN2_ICA_CORW_RESULT \
+        $ANN2_ICA_CORW_RESULT \
         $KNN_ICA_CORW_RESULT $KNN_PCA_CORW_RESULT \
         $KNN_CORG_RESULT $KNN_COVRED_RESULT > $BMC_ENSEMBLE_RESULT/test.$SUBJECT.txt
     return $?
@@ -154,25 +155,27 @@ bmc_ensemble()
 
 ###############################################################################
 
-###################
-## ANN5 PCA+CORW ##
-###################
-
-mkdir -p $ANN5_PCA_CORW_RESULT
-if ! train_mlp_pca $ANN5_PCA_CORW_CONF $ANN5_PCA_CORW_RESULT; then
-    cleanup $ANN5_PCA_CORW_RESULT
-    exit 10
-fi
-
-####################
-## ANN2p PCA+CORW ##
-####################
-
-mkdir -p $ANN2P_PCA_CORW_RESULT
-if ! train_mlp_pca $ANN2P_PCA_CORW_CONF $ANN2P_PCA_CORW_RESULT; then
-    cleanup $ANN2P_PCA_CORW_RESULT
-    exit 10
-fi
+# REMOVED FROM V1.0
+#
+# ###################
+# ## ANN5 PCA+CORW ##
+# ###################
+#
+# mkdir -p $ANN5_PCA_CORW_RESULT
+# if ! train_mlp_pca $ANN5_PCA_CORW_CONF $ANN5_PCA_CORW_RESULT; then
+#     cleanup $ANN5_PCA_CORW_RESULT
+#     exit 10
+# fi
+#
+# ####################
+# ## ANN2p PCA+CORW ##
+# ####################
+#
+# mkdir -p $ANN2P_PCA_CORW_RESULT
+# if ! train_mlp_pca $ANN2P_PCA_CORW_CONF $ANN2P_PCA_CORW_RESULT; then
+#     cleanup $ANN2P_PCA_CORW_RESULT
+#     exit 10
+# fi
 
 ###################
 ## ANN2 ICA+CORW ##
