@@ -1,8 +1,8 @@
-# ESAI-CEU-UCH system for Seizure Prediction Challenge
+# ESAI-CEU-UCH solution for Seizure Prediction Challenge
 
-This work presents the system proposed by Universidad CEU Cardenal Herrera
+This work presents the solution proposed by Universidad CEU Cardenal Herrera
 (ESAI-CEU-UCH) at Kaggle American Epilepsy Society Seizure Prediction
-Challenge. The proposed system was positioned as **4th** at
+Challenge. The proposed solution was positioned as **4th** at
 [Kaggle competition](https://www.kaggle.com/c/seizure-prediction).
 
 Different kind of input features (different preprocessing pipelines) and
@@ -18,26 +18,27 @@ implementation.
 
 ## Software
 
-This system uses the following open source software:
+This solution uses the following open source software:
 
 - [APRIL-ANN](https://github.com/pakozm/april-ann) toolkit v0.4.0. It is a
   toolkit for pattern recognition with Lua and C/C++ core. Because this tool is
   very new, the installation and configuration has been written in the pipeline.
 - [R project](http://www.r-project.org/) v3.0.2. For statistical computing, a
   wide spread tool in Kaggle competitions. Packages R.matlab, MASS, fda.usc,
-  fastICA, stringr and plyr are necessary to run the system.
+  fastICA, stringr and plyr are necessary to run the solution.
 - [GNU BASH](http://www.gnu.org/software/bash/) v4.3.11, with cp, mv, find,
   mktemp, sort and tr command line tools.
 
-The system is prepared to run in a Linux platform with
+The solution is prepared to run in a Linux platform with
 [Ubuntu 14.04 LTS](http://www.ubuntu.com/), but it could run in other Debian
 based distributions, but not tested.
 
 Additionally, APRIL-ANN toolkit has been compiled using the
 [Intel MKL library](https://software.intel.com/en-us/intel-mkl), and it is
 needed to ensure reproducibility of ANN models in the solution. However, the
-delivered code revision uses by default ATLAS library, which is open source
-and standard in Linux systems.
+delivered code revision uses by default ATLAS library, which is open source and
+standard in Linux systems, but it can also be configured to use Intel MKL
+library.
 
 ## Hardware
 
@@ -76,10 +77,10 @@ of data and result folders:
 - `USE_MKL=0` change this flag to indicate that you want to compile APRIl-ANN
   using Intel MKL library.
 
-All other environment variables are computed depending in this three root paths.
-Note that all the system must be executed being in the root path of the git
-repository. The list of available subjects depends in the subfolders of
-`DATA_PATH`.
+All other environment variables are computed depending on these root paths.
+Note that all the solution must be executed being in the root path of the git
+repository. The list of available subjects depends on the subfolders of
+`$DATA_PATH`.
 
 ## Recipe to reproduce the solution
 
@@ -154,7 +155,7 @@ $ ./train_subject.sh SUBJECT_NAME
 
 ## Recipe to test new data for a trained subject
 
-It is possible to use the system with new test data. You just need to deploy the
+It is possible to use the solution with new test data. You just need to deploy the
 new test files in the `$DATA/SUBJECT` folders and run the `test.sh` script:
 
 ```
@@ -166,7 +167,16 @@ the pattern `test.XXXXXX.txt` and output folder `$SUBMISSIONS_PATH/`.
 
 # Known problems
 
+## Problems in v1.0: post-competition solution
+
+- ICA seed was fixed after competition, so competition solution is not
+  exactly reproducible.
+
+Other bugs have been solved in v1.0.
+
+## Problems in v0.1: competition solution
+
 - Contextualized windows for ANNs have a minor bug.
 - For error, ICA uses test centers for test, instead of training centers.
-- ICA seed was frozen after competition, so competition system is not
+- ICA seed was fixed after competition, so competition solution is not
   exactly reproducible.
