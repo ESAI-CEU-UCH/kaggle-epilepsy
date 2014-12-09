@@ -525,7 +525,7 @@ function common.load_data(path,mask,params)
   local in_ds = dataset.union(in_ds_tbl)
   -- sanity checks
   assert(in_ds:numPatterns() == #input_mat_tbl * nrows)
-  if #labels > 0 then assert(#labels == input_mat:dim(1)) end
+  if #labels > 0 then assert(#labels == in_ds:numPatterns()) end
   -- load correlations if needed
   if params.cor then
     -- if correlation features are available, load them recursively
