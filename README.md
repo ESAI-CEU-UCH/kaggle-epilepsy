@@ -170,7 +170,7 @@ the pattern `test.XXXXXX.txt` and output folder `$SUBMISSIONS_PATH/`.
 ## Problems in v1.0: post-competition solution
 
 - ICA seed was fixed after competition, so competition solution is not
-  exactly reproducible.
+  exactly the same.
 
 Other bugs have been solved in v1.0.
 
@@ -179,4 +179,4 @@ Other bugs have been solved in v1.0.
 - Contextualized windows for ANNs have a minor bug.
 - For error, ICA uses test centers for test, instead of training centers.
 - ICA seed was fixed after competition, so competition solution is not
-  exactly reproducible.
+  exactly the same.
