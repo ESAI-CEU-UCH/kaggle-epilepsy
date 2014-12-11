@@ -312,8 +312,8 @@ account three windows (the current, the previous one and the following),
 allowing to capture temporal patterns in data. The learning rate was set to
 $\eta_0=0.2$ with a decay parameter of $\epsilon=0.001$, momentum was set to
 $\gamma=0.1$ and no other regularization term has been used. ANN weights were
-initialized sampling from a uniform distribution in range $[-3/(\text{fan-in} +
-  \text{fan-out}),3/(\text{fan-in} + \text{fan-out})]$. In APRIL-ANN one weight
+initialized sampling from a uniform distribution in range $[-3/\sqrt{\text{fan-in} +
+  \text{fan-out}},3/\sqrt{\text{fan-in} + \text{fan-out}}]$. In APRIL-ANN one weight
 $w$ at iteration $t+1$ is computed following:
 
 \begin{equation}
