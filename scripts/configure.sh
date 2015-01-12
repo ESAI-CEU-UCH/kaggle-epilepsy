@@ -32,7 +32,9 @@
 #    exit 10
 #fi
 
-VERSION=0.4.0
+APRILBALL=master.zip
+#VERSION=0.4.0
+VERSION=devel
 APRILANN=april-ann-$VERSION
 
 cleanup()
@@ -40,10 +42,10 @@ cleanup()
     echo "CLEANING UP, PLEASE WAIT UNTIL FINISH"
     cd $ROOT_PATH
     rm -Rf $TMP_PATH/$APRILANN
-    md5sum --quiet -c $ROOT_PATH/scripts/v0.4.0.md5
-    if [[ $? -ne 0 ]]; then
-        rm -f $TMP_PATH/v$VERSION.tar.gz
-    fi
+    # md5sum --quiet -c $ROOT_PATH/scripts/v0.4.0.md5
+    # if [[ $? -ne 0 ]]; then
+    #     rm -f $TMP_PATH/v$VERSION.tar.gz
+    # fi
 }
  
 # control-c execution
@@ -65,20 +67,22 @@ if [[ -z $APRIL_EXEC || $APRIL_EXEC = "" || ! -e $APRIL_EXEC ]]; then
         # check if source code has been downloaded
         if [[ ! -e v0.4.0.tar.gz ]]; then
             echo "Downloading APRIL-ANN tarball"
-            wget https://github.com/pakozm/april-ann/archive/v0.4.0.tar.gz
-            cd $ROOT_PATH && md5sum --quiet -c scripts/v0.4.0.md5 && cd $TMP_PATH
-            if [[ $? -ne 0 ]]; then
-                echo "ERROR: Unable to check md5sum of downloaded APRIL-ANN tarball"
-                cleanup
-                exit 10
-            fi
+            wget https://github.com/pakozm/april-ann/archive/$APRILBALL
+            # wget https://github.com/pakozm/april-ann/archive/v0.4.0.tar.gz
+            # cd $ROOT_PATH && md5sum --quiet -c scripts/v0.4.0.md5 && cd $TMP_PATH
+            # if [[ $? -ne 0 ]]; then
+            #     echo "ERROR: Unable to check md5sum of downloaded APRIL-ANN tarball"
+            #     cleanup
+            #     exit 10
+            # fi
         fi
         echo "Unpacking APRIL-ANN tarball"
-        if ! tar zxf v0.4.0.tar.gz; then
-            echo "ERROR: Unable to unpack APRIL-ANN tarball"
-            cleanup
-            exit 10
-        fi
+        # if ! tar zxf v0.4.0.tar.gz; then
+        #     echo "ERROR: Unable to unpack APRIL-ANN tarball"
+        #     cleanup
+        #     exit 10
+        # fi
+        unzip devel.zip
         echo "Instaling dependencies and compiling APRIL-ANN"
         cd $APRILANN
         # compilation process, if any error happens, the whole directory will be

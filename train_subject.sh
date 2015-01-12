@@ -97,7 +97,6 @@ train()
 	err=$?
     else
 	$APRIL_EXEC $TRAIN_ALL_SCRIPT $MLP_TRAIN_SCRIPT -f $CONF $ARGS \
-	    --fft=$FFT_PCA_PATH --cor=$WINDOWED_COR_PATH \
             --test=$RESULT/test.$SUBJECT.txt \
             --prefix=$RESULT | tee $RESULT/train.$SUBJECT.out
 	err=$?

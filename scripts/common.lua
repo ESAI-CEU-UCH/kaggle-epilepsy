@@ -569,6 +569,7 @@ local comb_options = {
   hmean = function(slice,r) r:set(1,1, 1.0 - hmean(1.0 - slice)) end,
 }
 function common.combine_filename_outputs(outputs, nrows, comb_name, target_check)
+  if comb_name == "none" then return outputs end
   assert(outputs:max() <= 1)
   assert(outputs:min() >= 0)
   local dim = outputs:dim()
