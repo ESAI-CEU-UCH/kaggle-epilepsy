@@ -202,7 +202,7 @@ util.serialize({ params=params, models=models }, "%s/%s.net"%{PREFIX,SUBJECT})
 -- perform test prediction if given test output filename
 if params.test then
   print("# Loading test")
-  local test_data,names = common.load_data(params.fft, "*test*", params)
+  local test_data,names = common.load_data(params.fft, common.TEST_MASK, params)
   test_data.input_dataset = common.apply_std(test_data.input_dataset,means,devs)
   print("# Test num patterns = ", test_data.input_dataset:numPatterns())
   assert(all_train_data.input_dataset:patternSize() == test_data.input_dataset:patternSize(),

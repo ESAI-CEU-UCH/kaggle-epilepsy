@@ -117,7 +117,7 @@ util.serialize(params, "%s/%s_params.lua"%{PREFIX,SUBJECT})
 if params.test then
   local kdt = train_knn(rnd, all_train_data.input_dataset)
   print("# Loading test")
-  local test_data,names = common.load_data(params.fft, "*test*", params)
+  local test_data,names = common.load_data(params.fft, common.TEST_MASK, params)
   test_data.input_dataset = common.apply_std(test_data.input_dataset,means,devs)
   print("# Test num patterns = ", test_data.input_dataset:numPatterns())
   local tr_out_ds = all_train_data.output_dataset

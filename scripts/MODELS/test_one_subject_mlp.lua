@@ -48,7 +48,7 @@ assert(#models > 0, "None model has been trained :S")
 ---------------------------------------------------------------------------
 -- perform test prediction if given test output filename
 print("# Loading test")
-local test_data,names = common.load_data(params.fft, "*test*", params)
+local test_data,names = common.load_data(params.fft, common.TEST_MASK, params)
 --
 test_data.input_dataset = common.apply_std(test_data.input_dataset,means,devs)
 print("# Test num patterns = ", test_data.input_dataset:numPatterns())
