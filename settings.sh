@@ -6,6 +6,8 @@ export TMP_PATH=TMP
 export MODELS_PATH=MODELS
 # Submissions results path
 export SUBMISSIONS_PATH=SUBMISSIONS
+# Indicate which mask use to distinguish test data from holdout data
+export TEST_MASK="*test*"
 # Indicate if compiling with MKL or not
 export USE_MKL=0
 # Change this if you want verbose output during training
@@ -42,7 +44,9 @@ if [[ ! -d $DATA_PATH ]]; then
     echo "The indicated data path $DATA_PATH is not a folder"
     exit 10
 fi
-if [[ ! -d $TMP_PATH ]]; then
+if [[ ! -e $TMP_PATH ]]; then
+    mkdir -p $TMP_PATH
+elif [[ ! -d $TMP_PATH ]]; then
     echo "The indicated tmp path $TMP_PATH is not a folder"
     exit 10
 fi

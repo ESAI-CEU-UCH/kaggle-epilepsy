@@ -79,7 +79,7 @@ if FFT then params.fft = FFT end
 if COR then params.cor = COR end
 --
 print("# Loading test")
-local test_data,names = common.load_data(params.fft, "*test*", params)
+local test_data,names = common.load_data(params.fft, common.TEST_MASK, params)
 print("# Test num patterns = ", test_data.input_dataset:numPatterns())
 assert(all_train_data.input_dataset:patternSize() == test_data.input_dataset:patternSize(),
        "Different input size between training and test data")
