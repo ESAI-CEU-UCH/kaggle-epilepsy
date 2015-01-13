@@ -24,7 +24,6 @@
 # IN THE SOFTWARE.
 
 . settings.sh
-mkdir -p $TMP_PATH
 . scripts/configure.sh
 
 cleanup()
