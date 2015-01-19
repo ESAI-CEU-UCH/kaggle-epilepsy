@@ -52,7 +52,7 @@ iterator(ipairs(auc_and_sizes)):
       print("# Subject " .. common.SUBJECTS[k] .. ":", v[1], v[2])
   end)
 -- compute averaged AUC
-local total_size = iterator(table.ivalues(auc_and_sizes)):field(2):reduce(math.add(),0)
+local total_size = iterator(table.ivalues(auc_and_sizes)):field(2):reduce(math.add,0)
 local averaged_auc = iterator(table.ivalues(auc_and_sizes)):
-map(function(t) return t[1] * t[2]/total_size end):reduce(math.add(),0)
+map(function(t) return t[1] * t[2]/total_size end):reduce(math.add,0)
 print("# averaged AUC:",averaged_auc)

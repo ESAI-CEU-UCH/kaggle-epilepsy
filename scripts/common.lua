@@ -142,7 +142,7 @@ local function compute_cross_validation_partition(subject, data_0, data_1)
     end
   end
   local function count(s)
-    return iterator(table.ivalues(s)):map(function(v) return #v end):reduce(math.add(),0)
+    return iterator(table.ivalues(s)):map(function(v) return #v end):reduce(math.add,0)
   end
   assert(N == count(sequences_0) + count(sequences_1))
   --
