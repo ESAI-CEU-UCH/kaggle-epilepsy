@@ -483,7 +483,8 @@ function common.load_data(path,mask,params)
       assert(#mat_tbl == 1)
       input = mat_tbl[#mat_tbl]
     else -- load a matrix splitted into different channel filenames
-      local list = glob(filename:gsub("channel_..", "channel_??"))
+      local list_mask = filename:gsub("channel_..", "channel_??")
+      local list = glob(list_mask)
       num_channels = num_channels or #list
       assert(num_channels == #list, "Incorrect number of channels")
       for _,filename in ipairs(list) do

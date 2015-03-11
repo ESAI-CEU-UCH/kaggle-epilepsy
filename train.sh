@@ -26,6 +26,7 @@
 . settings.sh
 . scripts/configure.sh
 
+ANN2_FFT_CONF=scripts/MODELS/confs/ann2.lua
 ANN5_PCA_CORW_CONF=scripts/MODELS/confs/ann5_pca_corw.lua
 ANN2_ICA_CORW_CONF=scripts/MODELS/confs/ann2_ica_corw.lua
 ANN2P_PCA_CORW_CONF=scripts/MODELS/confs/ann2p_pca_corw.lua
@@ -77,7 +78,6 @@ train()
 	err=$?
     else
 	$APRIL_EXEC $TRAIN_ALL_SCRIPT $MLP_TRAIN_SCRIPT -f $CONF $ARGS \
-	    --fft=$FFT_PCA_PATH --cor=$WINDOWED_COR_PATH \
             --test=$RESULT/test.txt \
             --prefix=$RESULT | tee $RESULT/train.out
 	err=$?
@@ -85,6 +85,12 @@ train()
     # removes keyboard interrupt trap (control-c)
     trap - SIGINT
     return $err    
+}
+
+train_mlp_fft()
+{
+    train $MLP_TRAIN_SCRIPT $1 $2 "--fft=$FFT_PATH"
+    return $?
 }
 
 train_mlp_pca()
@@ -137,6 +143,18 @@ bmc_ensemble()
 
 if ! ./preprocess.sh; then
     exit 10
+fi
+
+##############
+## ANN2 FFT ##
+##############
+
+if [[ ! -e $ANN2_FFT_RESULT ]]; then
+    mkdir -p $ANN2_FFT_RESULT
+    if ! train_mlp_fft $ANN2_FFT_CONF $ANN2_FFT_RESULT; then
+        cleanup $ANN2_FFT_RESULT
+	exit 10
+    fi
 fi
 
 ###################
